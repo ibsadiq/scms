@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html {{ HTML_ATTRS }}>
+<head {{ HEAD_ATTRS }}>
+  {{ HEAD }}
+
+  <!-- Critical: Load and apply school settings BEFORE page render -->
+  <script>
+    (function() {
+      // Function to apply settings from cache or fetch from API
+      async function loadSchoolSettings() {
+        try {
+          console.log('🔄 [PRELOAD] Starting settings load...');
+
+          // Check localStorage cache first (30 min cache)
+          const CACHE_KEY = 'school_settings';
+          const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
+
+          let settings = null;
+
+          // Try to get from cache
+          try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+              const { data, timestamp } = JSON.parse(cached);
+              const isExpired = Date.now() - timestamp > CACHE_DURATION;
+
+              if (!isExpired) {
+                settings = data;
+                console.log('✅ [PRELOAD] Using cached settings:', settings);
+              } else {
+                console.log('⏰ [PRELOAD] Cache expired');
+              }
+            } else {
+              console.log('📭 [PRELOAD] No cache found');
+            }
+          } catch (e) {
+            console.warn('⚠️ [PRELOAD] Cache read error:', e);
+          }
+
+          // If no cache, fetch from API
+          if (!settings) {
+            try {
+              const apiBaseUrl = window.location.origin + '/api';
+              const url = apiBaseUrl + '/settings/';
+              console.log('🌐 [PRELOAD] Fetching from:', url);
+
+              const response = await fetch(url);
+              console.log('📡 [PRELOAD] Fetch response status:', response.status);
+
+              if (response.ok) {
+                settings = await response.json();
+                console.log('✅ [PRELOAD] Fetched settings:', settings);
+
+                // Cache the settings
+                try {
+                  localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    data: settings,
+                    timestamp: Date.now()
+                  }));
+                  console.log('💾 [PRELOAD] Cached settings');
+                } catch (e) {
+                  console.warn('⚠️ [PRELOAD] Cache write error:', e);
+                }
+              } else {
+                console.error('❌ [PRELOAD] Fetch failed with status:', response.status);
+              }
+            } catch (e) {
+              console.error('❌ [PRELOAD] Fetch error:', e);
+            }
+          }
+
+          // Apply settings if we have them
+          if (settings) {
+            console.log('🎨 [PRELOAD] Applying settings...');
+            applySettings(settings);
+            // Set global product name fallback if not present
+            window.__PRODUCT_NAME__ = window.__PRODUCT_NAME__ || 'ScholAfric';
+          } else {
+            console.warn('⚠️ [PRELOAD] No settings to apply');
+          }
+        } catch (error) {
+          console.error('❌ [PRELOAD] Error loading settings:', error);
+        }
+      }
+
+      // Function to convert hex to OKLCH
+      function hexToOklch(hex) {
+        // Parse hex color
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) {
+          return { light: 'oklch(0.42 0.12 264)', dark: 'oklch(0.65 0.15 264)' };
+        }
+
+        const r = parseInt(result[1], 16) / 255;
+        const g = parseInt(result[2], 16) / 255;
+        const b = parseInt(result[3], 16) / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+        const delta = max - min;
+
+        let h = 0;
+        if (delta !== 0) {
+          if (max === r) {
+            h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+          } else if (max === g) {
+            h = ((b - r) / delta + 2) / 6;
+          } else {
+            h = ((r - g) / delta + 4) / 6;
+          }
+        }
+
+        const hue = Math.round(h * 360);
+        const chroma = delta === 0 ? 0 : Math.min(0.15, delta * 0.2);
+        const lightness = Math.max(0.35, Math.min(0.55, l * 0.9));
+
+        return {
+          light: 'oklch(' + lightness.toFixed(2) + ' ' + chroma.toFixed(2) + ' ' + hue + ')',
+          dark: 'oklch(' + Math.min(0.70, lightness + 0.2).toFixed(2) + ' ' + chroma.toFixed(2) + ' ' + hue + ')'
+        };
+      }
+
+      // Function to apply settings to document
+      function applySettings(settings) {
+        const root = document.documentElement;
+        // after applySettings(settings)
+        if (settings.app_logo_url || settings.product_logo) {
+          window.__APP_LOGO_URL__ = settings.app_logo_url || settings.product_logo;
+          console.log('🏷️ [PRELOAD] Stored app logo URL:', window.__APP_LOGO_URL__);
+        }
+        // Apply primary color
+        if (settings.primary_color) {
+          const oklch = hexToOklch(settings.primary_color);
+          root.style.setProperty('--primary', oklch.light);
+          root.style.setProperty('--primary-foreground', 'oklch(0.99 0 0)');
+          console.log('🎨 [PRELOAD] Applied primary color:', settings.primary_color);
+        }
+
+        // Apply secondary color
+        if (settings.secondary_color) {
+          const oklch = hexToOklch(settings.secondary_color);
+          root.style.setProperty('--secondary', oklch.light);
+          root.style.setProperty('--secondary-foreground', 'oklch(0.99 0 0)');
+          console.log('🎨 [PRELOAD] Applied secondary color:', settings.secondary_color);
+        }
+
+        // Store logo and school name in a temporary location that Vue can pick up
+        if (settings.school_logo_url) {
+          window.__SCHOOL_LOGO_URL__ = settings.school_logo_url;
+          console.log('🖼️ [PRELOAD] Stored logo URL');
+        }
+
+        if (settings.school_name) {
+          window.__SCHOOL_NAME__ = settings.school_name;
+          console.log('🏫 [PRELOAD] Stored school name:', settings.school_name);
+        }
+        // Use any provided product_name from remote settings if available
+        if (settings.product_name) {
+          window.__PRODUCT_NAME__ = settings.product_name;
+          console.log('🏷️ [PRELOAD] Stored product name:', settings.product_name);
+       }
+      }
+
+      // Execute immediately
+      loadSchoolSettings();
+    })();
+  </script>
+</head>
+<body {{ BODY_ATTRS }}>
+  {{ APP }}
+</body>
+</html>
