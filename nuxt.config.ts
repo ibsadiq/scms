@@ -34,12 +34,14 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    apiBase: process.env.NUXT_API_BASE || 'http://localhost:8000/api',
     public: {
       // These values can be overridden by environment variables:
       // NUXT_PUBLIC_PRODUCT_NAME, NUXT_PUBLIC_APP_LOGO, NUXT_PUBLIC_API_BASE, NUXT_PUBLIC_TENANT_MODE
+      
       productName: 'SSync',
       appLogo: '/logo.png',
-      apiBase: 'http://localhost:8000/api',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
       tenantMode: 'multi',
     }
   },
