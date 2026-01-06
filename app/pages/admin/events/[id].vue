@@ -222,7 +222,7 @@ import type { SchoolEvent, Term } from '~~/types'
 import { useSchoolEvents } from '~~/composables/admin/useSchoolEvents'
 import { useTerms } from '~~/composables/admin/useTerms'
 import { formatDate, getEventTypeLabel, getEventTypeColor } from '~~/utils/helpers'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: 'admin',
@@ -272,13 +272,13 @@ const handleSubmit = async () => {
   const { data, error: apiError } = await updateEvent(id, event.value)
 
   if (data) {
-    toast.success('Event updated successfully')
+    showSuccessToast('Event updated successfully')
     originalData.value = { ...event.value }
     setTimeout(() => {
       editMode.value = false
     }, 1500)
   } else {
-    toast.error('Failed to update event', { description: apiError || 'An unexpected error occurred. Please try again.' })
+    showErrorToast(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to update event')
   }
 
   saving.value = false
@@ -343,10 +343,10 @@ const handleDelete = async () => {
 
   const { error } = await deleteEvent(event.value.id!)
   if (!error) {
-    toast.success('Event deleted successfully')
+    showSuccessToast('Event deleted successfully')
     router.push('/admin/events')
   } else {
-    toast.error('Failed to delete event', { description: error || 'An unexpected error occurred. Please try again.' })
+    showErrorToast(error || 'An unexpected error occurred. Please try again.' , 'Failed to delete event')
   }
 }
 

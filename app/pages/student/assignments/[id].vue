@@ -341,11 +341,14 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useStudentAssignments } from '~~/composables/student/useAssignments'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   middleware: 'student'
 })
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const assignmentId = computed(() => Number(route.params.id))
@@ -417,12 +420,12 @@ const handleSubmit = async () => {
   const result = await submitAssignment(assignmentId.value, formData)
 
   if (result.success) {
-    toast.success(result.message || 'Assignment submitted successfully!')
+    showSuccessToast(result.message || 'Assignment submitted successfully!')
     submissionForm.value.text = ''
     selectedFiles.value = []
     await fetchMySubmission(assignmentId.value)
   } else {
-    toast.error(result.error || 'Failed to submit assignment')
+    showError(result.error || 'Failed to submit assignment')
   }
 }
 
@@ -438,12 +441,12 @@ const handleUpdate = async () => {
   const result = await updateSubmission(assignmentId.value, formData)
 
   if (result.success) {
-    toast.success(result.message || 'Submission updated successfully!')
+    showSuccessToast(result.message || 'Submission updated successfully!')
     showUpdateForm.value = false
     updateFiles.value = []
     await fetchMySubmission(assignmentId.value)
   } else {
-    toast.error(result.error || 'Failed to update submission')
+    showError(result.error || 'Failed to update submission')
   }
 }
 

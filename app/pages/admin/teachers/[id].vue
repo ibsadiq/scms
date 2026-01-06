@@ -258,19 +258,177 @@
 
     <!-- Edit Dialog -->
     <Dialog v-model:open="showEditDialog">
-      <DialogContent class="max-w-2xl">
+      <DialogScrollContent class="sm:max-w-[1200px]">
         <DialogHeader>
           <DialogTitle>Edit Teacher</DialogTitle>
           <DialogDescription>Update teacher information</DialogDescription>
         </DialogHeader>
-        <div class="text-center py-8">
-          <Icon name="lucide:construction" class="w-12 h-12 mx-auto text-neutral-400 mb-2" />
-          <p class="text-sm text-neutral-600 dark:text-neutral-400">Edit functionality coming soon!</p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="showEditDialog = false">Close</Button>
-        </DialogFooter>
-      </DialogContent>
+
+        <form @submit.prevent="handleUpdate" class="space-y-6">
+          <!-- Personal Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold">Personal Information</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_empId">Employee ID *</Label>
+                <Input id="edit_empId" v-model="editForm.empId" required />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_short_name">Short Name</Label>
+                <Input id="edit_short_name" v-model="editForm.short_name" maxlength="3" />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_designation">Designation</Label>
+                <Input id="edit_designation" v-model="editForm.designation" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_first_name">First Name *</Label>
+                <Input id="edit_first_name" v-model="editForm.first_name" required />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_middle_name">Middle Name</Label>
+                <Input id="edit_middle_name" v-model="editForm.middle_name" />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_last_name">Last Name *</Label>
+                <Input id="edit_last_name" v-model="editForm.last_name" required />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_date_of_birth">Date of Birth</Label>
+                <Input id="edit_date_of_birth" type="date" v-model="editForm.date_of_birth" />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_gender">Gender</Label>
+                <select
+                  id="edit_gender"
+                  v-model="editForm.gender"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold">Contact Information</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_email">Email *</Label>
+                <Input id="edit_email" type="email" v-model="editForm.email" required />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_alt_email">Alternative Email</Label>
+                <Input id="edit_alt_email" type="email" v-model="editForm.alt_email" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_phone_number">Phone Number *</Label>
+                <Input id="edit_phone_number" type="tel" v-model="editForm.phone_number" required />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_address">Address</Label>
+                <Input id="edit_address" v-model="editForm.address" />
+              </div>
+            </div>
+          </div>
+
+          <!-- National IDs -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold">National Identification</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_national_id">National ID</Label>
+                <Input id="edit_national_id" v-model="editForm.national_id" />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_nssf_number">NSSF Number</Label>
+                <Input id="edit_nssf_number" v-model="editForm.nssf_number" />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_tin_number">TIN Number</Label>
+                <Input id="edit_tin_number" v-model="editForm.tin_number" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Academic Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold">Academic Information</h3>
+
+            <div class="space-y-2">
+              <Label for="edit_subject_specialization">Subject Specialization</Label>
+              <select
+                id="edit_subject_specialization"
+                v-model="editForm.subject_specialization"
+                multiple
+                class="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
+              >
+                <option v-for="subject in subjects" :key="subject.id" :value="subject.id">
+                  {{ subject.name }}
+                </option>
+              </select>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Hold Ctrl/Cmd to select multiple subjects</p>
+            </div>
+          </div>
+
+          <!-- Employment Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold">Employment Information</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_salary">Salary</Label>
+                <Input id="edit_salary" type="number" v-model.number="editForm.salary" step="0.01" />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="edit_inactive">Status</Label>
+                <select
+                  id="edit_inactive"
+                  v-model="editForm.inactive"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
+                >
+                  <option :value="false">Active</option>
+                  <option :value="true">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditDialog = false">Cancel</Button>
+            <Button type="submit" :disabled="updating">
+              <Icon v-if="updating" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
+              {{ updating ? 'Saving...' : 'Save Changes' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogScrollContent>
     </Dialog>
   </div>
 </template>
@@ -278,48 +436,152 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DialogScrollContent } from '@/components/ui/dialog'
 import { useTeachers } from '~~/composables/admin/useTeachers'
 import { useInvitations, type Invitation } from '~~/composables/admin/useInvitations'
-import type { Teacher } from '~~/types'
-import { toast } from 'vue-sonner'
+import { useApi } from '~~/composables/useApi'
+import type { Teacher, Subject } from '~~/types'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
 
+const { success, error: showError } = useToast()
+
 const route = useRoute()
 const router = useRouter()
-const { fetchTeacher, deleteTeacher } = useTeachers()
+const { fetchTeacher, deleteTeacher, updateTeacher } = useTeachers()
 const { fetchInvitationByProfileId, resendInvitation } = useInvitations()
+const { apiCall } = useApi()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const teacher = ref<Teacher | null>(null)
 const loading = ref(true)
 const showEditDialog = ref(false)
 const invitation = ref<Invitation | null>(null)
 const resendingInvitation = ref(false)
+const updating = ref(false)
+const subjects = ref<Subject[]>([])
 
-// Load teacher data
+const editForm = ref({
+  empId: '',
+  first_name: '',
+  middle_name: '',
+  last_name: '',
+  email: '',
+  phone_number: '',
+  alt_email: '',
+  address: '',
+  gender: '',
+  date_of_birth: '',
+  national_id: '',
+  nssf_number: '',
+  tin_number: '',
+  designation: '',
+  short_name: '',
+  subject_specialization: [] as number[],
+  salary: null as number | null,
+  inactive: false
+})
+
+// Initialize edit form when dialog opens
+watch(showEditDialog, (newValue) => {
+  if (newValue && teacher.value) {
+    editForm.value = {
+      empId: teacher.value.empId,
+      first_name: teacher.value.first_name,
+      middle_name: teacher.value.middle_name || '',
+      last_name: teacher.value.last_name,
+      email: teacher.value.email,
+      phone_number: teacher.value.phone_number,
+      alt_email: teacher.value.alt_email || '',
+      address: teacher.value.address || '',
+      gender: teacher.value.gender || '',
+      date_of_birth: teacher.value.date_of_birth || '',
+      national_id: teacher.value.national_id || '',
+      nssf_number: teacher.value.nssf_number || '',
+      tin_number: teacher.value.tin_number || '',
+      designation: teacher.value.designation || '',
+      short_name: teacher.value.short_name || '',
+      subject_specialization: teacher.value.subject_specialization?.map(name =>
+        subjects.value.find(s => s.name === name)?.id
+      ).filter(Boolean) as number[] || [],
+      salary: teacher.value.salary,
+      inactive: teacher.value.inactive || false
+    }
+  }
+})
+
+// Load teacher data and subjects
 onMounted(async () => {
   const id = Number(route.params.id)
   if (isNaN(id)) {
-    toast.error('Invalid teacher ID')
+    showErrorToast('Invalid teacher ID', 'Error')
     router.push('/admin/teachers')
     return
   }
 
-  const response = await fetchTeacher(id)
+  const [teacherResponse, subjectsResponse] = await Promise.all([
+    fetchTeacher(id),
+    apiCall<Subject[]>('/academic/subjects/')
+  ])
+
   loading.value = false
 
-  if (response.data) {
-    teacher.value = response.data
+  if (teacherResponse.data) {
+    teacher.value = teacherResponse.data
 
     // Check for invitation
     invitation.value = await fetchInvitationByProfileId('teacher', id)
   } else {
-    toast.error(response.error || 'Failed to load teacher')
+    showErrorToast(teacherResponse.error, 'Failed to load teacher')
+  }
+
+  if (subjectsResponse.data) {
+    subjects.value = subjectsResponse.data
+  }
+
+  // Check if edit query parameter is present and open edit dialog
+  if (route.query.edit === 'true') {
+    showEditDialog.value = true
   }
 })
+
+// Handle update
+const handleUpdate = async () => {
+  if (!teacher.value) return
+
+  updating.value = true
+
+  // Convert subject IDs to subject names for backend
+  const subjectNames = editForm.value.subject_specialization
+    ?.map(id => subjects.value.find(s => s.id === id)?.name)
+    .filter(Boolean) || []
+
+  const payload = {
+    ...editForm.value,
+    subject_specialization: subjectNames,
+    // Convert empty date strings to null
+    date_of_birth: editForm.value.date_of_birth || null
+  }
+
+  const response = await updateTeacher(teacher.value.id!, payload)
+
+  if (response.error) {
+    showErrorToast(response.error, 'Failed to update teacher')
+  } else {
+    showSuccessToast(`${editForm.value.first_name} ${editForm.value.last_name} updated successfully`)
+    teacher.value = response.data!
+    showEditDialog.value = false
+  }
+
+  updating.value = false
+}
 
 // Handle delete
 const handleDelete = async () => {
@@ -331,9 +593,9 @@ const handleDelete = async () => {
 
   const response = await deleteTeacher(teacher.value.id!)
   if (response.error) {
-    toast.error('Failed to delete teacher: ' + response.error)
+    showErrorToast(response.error, 'Failed to delete teacher')
   } else {
-    toast.success(`${teacher.value.first_name} ${teacher.value.last_name} deleted successfully`)
+    showSuccessToast(`${teacher.value.first_name} ${teacher.value.last_name} deleted successfully`)
     router.push('/admin/teachers')
   }
 }
@@ -384,9 +646,9 @@ const handleResendInvitation = async () => {
   resendingInvitation.value = false
 
   if (response.error) {
-    toast.error('Failed to resend invitation')
+    showError('Failed to resend invitation')
   } else {
-    toast.success('Invitation resent successfully')
+    showSuccessToast('Invitation resent successfully')
   }
 }
 
@@ -399,9 +661,9 @@ const copyInvitationLink = async () => {
 
   try {
     await navigator.clipboard.writeText(link)
-    toast.success('Invitation link copied to clipboard')
+    showSuccessToast('Invitation link copied to clipboard')
   } catch (err) {
-    toast.error('Failed to copy link')
+    showError('Failed to copy link')
   }
 }
 </script>

@@ -437,7 +437,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
@@ -455,6 +456,8 @@ interface Schedule {
   start_time: string
   end_time: string
 }
+
+const { success, error: showError } = useToast()
 
 const { apiCall } = useApi()
 
@@ -607,10 +610,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = schedules.value.findIndex(s => s.id === editingSchedule.value!.id)
       if (index !== -1) schedules.value[index] = data
-      toast.success('Schedule updated successfully')
+      showSuccessToast('Schedule updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update schedule', { description: apiError || 'An unexpected error occurred. Please try again.' })
+      showErrorToast(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to update schedule')
     }
   } else {
     const { data, error: apiError } = await apiCall('/timetable/periods/', {
@@ -620,10 +623,10 @@ const handleSubmit = async () => {
 
     if (data) {
       schedules.value.push(data)
-      toast.success('Schedule created successfully')
+      showSuccessToast('Schedule created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create schedule', { description: apiError || 'An unexpected error occurred. Please try again.' })
+      showErrorToast(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to create schedule')
     }
   }
 
@@ -639,9 +642,9 @@ const handleDelete = async (schedule: Schedule) => {
 
   if (!apiError) {
     schedules.value = schedules.value.filter(s => s.id !== schedule.id)
-    toast.success('Schedule deleted successfully')
+    showSuccessToast('Schedule deleted successfully')
   } else {
-    toast.error('Failed to delete schedule: ' + apiError)
+    showError('Failed to delete schedule: ' + apiError)
   }
 }
 

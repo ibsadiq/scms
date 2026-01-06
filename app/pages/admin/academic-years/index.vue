@@ -160,7 +160,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { DateInput } from '@/components/ui/date-input'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import {
   Dialog,
   DialogContent,
@@ -187,11 +187,14 @@ import {
 import type { AcademicYear } from '~~/types'
 import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
 import { formatDate } from '~~/utils/helpers'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
   //// middleware: 'auth'
 })
+
+const { success, error: showError } = useToast()
 
 const { fetchAcademicYears, createAcademicYear, updateAcademicYear, deleteAcademicYear } = useAcademicYears()
 
@@ -234,28 +237,31 @@ const editYear = (year: AcademicYear) => {
 const handleSubmit = async () => {
   saving.value = true
 
+  const payload = {
+    ...formData.value,
+    // Convert empty date strings to null
+    start_date: formData.value.start_date || null,
+    end_date: formData.value.end_date || null
+  }
+
   if (editingYear.value) {
-    const { data, error: apiError } = await updateAcademicYear(editingYear.value.id!, formData.value)
+    const { data, error: apiError } = await updateAcademicYear(editingYear.value.id!, payload)
     if (data) {
       const index = academicYears.value.findIndex(y => y.id === editingYear.value!.id)
       if (index !== -1) academicYears.value[index] = data
-      toast.success('Academic year updated successfully')
+      showSuccessToast('Academic year updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update academic year', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showErrorToast(apiError, 'Failed to update academic year')
     }
   } else {
-    const { data, error: apiError } = await createAcademicYear(formData.value)
+    const { data, error: apiError } = await createAcademicYear(payload)
     if (data) {
       academicYears.value.push(data)
-      toast.success('Academic year created successfully')
+      showSuccessToast('Academic year created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create academic year', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showErrorToast(apiError, 'Failed to create academic year')
     }
   }
 
@@ -268,9 +274,9 @@ const handleDelete = async (year: AcademicYear) => {
   const { error: apiError } = await deleteAcademicYear(year.id!)
   if (!apiError) {
     academicYears.value = academicYears.value.filter(y => y.id !== year.id)
-    toast.success('Academic year deleted successfully')
+    showSuccessToast('Academic year deleted successfully')
   } else {
-    toast.error('Failed to delete academic year', {
+    showError('Failed to delete academic year', {
       description: apiError
     })
   }

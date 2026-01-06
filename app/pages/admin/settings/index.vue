@@ -381,11 +381,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSettings, type SchoolSettings } from '~~/composables/useSettings'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const { fetchSettings, updateSettings, uploadLogo, removeLogo, applyPrimaryColor, applySecondaryColor } = useSettings()
 
@@ -438,7 +441,7 @@ const loadSettings = async () => {
       applyPrimaryColor(response.data.primary_color)
     }
   } else if (response.error) {
-    toast.error('Failed to load settings', { description: response.error })
+    showErrorToast(response.error , 'Failed to load settings')
   }
 
   loading.value = false
@@ -453,13 +456,13 @@ const handleLogoUpload = (event: Event) => {
 
   // Validate file size (2MB)
   if (file.size > 2 * 1024 * 1024) {
-    toast.error('File too large', { description: 'Logo must be less than 2MB' })
+    showErrorToast('Logo must be less than 2MB' , 'File too large')
     return
   }
 
   // Validate file type
   if (!file.type.startsWith('image/')) {
-    toast.error('Invalid file type', { description: 'Please upload an image file' })
+    showErrorToast('Please upload an image file' , 'Invalid file type')
     return
   }
 
@@ -490,9 +493,9 @@ const handleRemoveLogo = async () => {
     const response = await removeLogo()
     if (response.data) {
       formData.value.logo_url = ''
-      toast.success('Logo removed successfully')
+      showSuccessToast('Logo removed successfully')
     } else if (response.error) {
-      toast.error('Failed to remove logo', { description: response.error })
+      showErrorToast(response.error , 'Failed to remove logo')
     }
   }
 }
@@ -501,7 +504,7 @@ const handleRemoveLogo = async () => {
 const saveSettings = async () => {
   // Validate
   if (!formData.value.school_name) {
-    toast.error('School name is required')
+    showError('School name is required')
     return
   }
 
@@ -512,7 +515,7 @@ const saveSettings = async () => {
     if (logoFile.value) {
       const logoResponse = await uploadLogo(logoFile.value)
       if (logoResponse.error) {
-        toast.error('Failed to upload logo', { description: logoResponse.error })
+        showErrorToast(logoResponse.error , 'Failed to upload logo')
         saving.value = false
         return
       }
@@ -538,12 +541,12 @@ const saveSettings = async () => {
         applySecondaryColor(response.data.secondary_color)
       }
 
-      toast.success('Settings saved successfully')
+      showSuccessToast('Settings saved successfully')
     } else if (response.error) {
-      toast.error('Failed to save settings', { description: response.error })
+      showErrorToast(response.error , 'Failed to save settings')
     }
   } catch (error) {
-    toast.error('Failed to save settings')
+    showError('Failed to save settings')
   } finally {
     saving.value = false
   }

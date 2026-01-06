@@ -10,7 +10,7 @@ export default defineNuxtPlugin(async () => {
   const { token, fetchUser, user } = useAuth()
   const { fetchSettings, applyPrimaryColor, applySettingsToDocument } = useSettings()
   const config = useRuntimeConfig()
-  const productName = config.public?.productName || 'ScholAfric'
+  const productName = config.public?.productName || 'SSync'
   
 
   // Only run on client-side and if user is authenticated

@@ -1,7 +1,7 @@
 // composables/useBrand.ts
 export const useBrand = () => {
   const cfg = useRuntimeConfig()
-  const productName = cfg.public?.productName || 'ScholAfric'
+  const productName = cfg.public?.productName || 'SSync'
   const schoolName = useState<string>('school_name', () => '')
 
   const product = () => productName

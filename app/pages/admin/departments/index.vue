@@ -119,7 +119,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import {
   Dialog,
   DialogContent,
@@ -129,6 +129,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useApi } from '~~/composables/useApi'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
@@ -140,6 +141,8 @@ interface Department {
   name: string
   order_rank: number | null
 }
+
+const { success, error: showError } = useToast()
 
 const { apiCall } = useApi()
 
@@ -182,10 +185,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = departments.value.findIndex(d => d.id === editingDept.value!.id)
       if (index !== -1) departments.value[index] = data
-      toast.success('Department updated successfully')
+      showSuccessToast('Department updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update department', {
+      showError('Failed to update department', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -196,10 +199,10 @@ const handleSubmit = async () => {
     )
     if (data) {
       departments.value.push(data)
-      toast.success('Department created successfully')
+      showSuccessToast('Department created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create department', {
+      showError('Failed to create department', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -223,9 +226,9 @@ const handleDelete = async (dept: Department) => {
 
   if (!apiError) {
     departments.value = departments.value.filter(d => d.id !== dept.id)
-    toast.success('Department deleted successfully')
+    showSuccessToast('Department deleted successfully')
   } else {
-    toast.error('Failed to delete department', {
+    showError('Failed to delete department', {
       description: apiError
     })
   }

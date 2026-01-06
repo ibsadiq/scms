@@ -357,12 +357,15 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useStudentFees } from '~~/composables/student/useFees'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   middleware: 'student',
   layout: 'student'
 })
+
+const { success, error: showError } = useToast()
 
 const {
   feeBalances,
@@ -394,9 +397,9 @@ const loadData = async () => {
 const handleDownloadReceipt = async (receiptId: number) => {
   const result = await downloadReceipt(receiptId)
   if (result.success) {
-    toast.success('Success', result.message)
+    showSuccessToast('Success', result.message)
   } else {
-    toast.error('Error', result.error)
+    showError('Error', result.error)
   }
 }
 

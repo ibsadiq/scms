@@ -39,14 +39,6 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
         admin_user?: any
       }>(`${getApiBaseUrl()}/tenants/onboarding/check/`)
 
-      console.log('🔍 [refreshStatus] Response from backend:', {
-        needs_onboarding: response.needs_onboarding,
-        current_step: response.current_step,
-        onboarding_step: response.onboarding_step,
-        school_id: response.school_id,
-        admin_user: response.admin_user,
-      })
-
       if (response.needs_onboarding) {
         // Determine current step based on what's been completed
         let stepToShow = OnboardingStep.SCHOOL_INFO
@@ -137,11 +129,9 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
         { method: 'POST', body: data }
       )
 
-      console.log('🏫 [createTenant] Response:', response)
 
       // If backend returns next_step, use it directly
       if (response.next_step) {
-        console.log('➡️ [createTenant] Backend says next step is:', response.next_step)
         currentStep.value = response.next_step
       } else {
         await refreshStatus()
@@ -180,7 +170,6 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
         { method: 'POST', body: data }
       )
 
-      console.log('👤 [createAdminUser] Response:', response)
 
       if (response.tokens) {
         authStore.setTokens(
@@ -192,7 +181,6 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
 
       // If backend returns next_step, use it directly
       if (response.next_step) {
-        console.log('➡️ [createAdminUser] Backend says next step is:', response.next_step)
         currentStep.value = response.next_step
       } else {
         await refreshStatus()
@@ -229,11 +217,9 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
         }
       )
 
-      console.log('🎨 [configureSettings] Response:', response)
 
       // If backend returns next_step, use it directly
       if (response.next_step) {
-        console.log('➡️ [configureSettings] Backend says next step is:', response.next_step)
         currentStep.value = response.next_step
       } else {
         await refreshStatus()
@@ -312,7 +298,6 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
     try {
       // First get onboarding status
       const onboardingResponse = await $fetch<any>(`${getApiBaseUrl()}/tenants/onboarding/check/`)
-      console.log('📦 [getSchoolSettings] Onboarding response:', onboardingResponse)
 
       // If we have a school, also fetch full settings including logo
       if (onboardingResponse?.school_id && authStore.accessToken) {
@@ -322,7 +307,6 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
               Authorization: `Bearer ${authStore.accessToken}`,
             },
           })
-          console.log('📦 [getSchoolSettings] Settings response:', settingsResponse)
 
           // Merge both responses
           return {
@@ -331,7 +315,6 @@ const currentStep = ref<number>(OnboardingStep.SCHOOL_INFO)
             school_logo_url: settingsResponse.school_logo_url || settingsResponse.school_logo,
           }
         } catch (settingsErr) {
-          console.log('⚠️ [getSchoolSettings] Could not fetch full settings, using onboarding data only')
           return onboardingResponse
         }
       }

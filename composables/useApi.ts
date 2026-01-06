@@ -41,7 +41,7 @@ export const useApi = () => {
 
       return {
         data: null,
-        error: error.data?.error || error.data?.detail || error.message || 'An error occurred'
+        error: error
       }
     }
   }

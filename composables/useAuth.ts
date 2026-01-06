@@ -58,7 +58,6 @@ export const useAuth = () => {
         }
       )
 
-      console.log('🔐 LOGIN COMPOSABLE: Response received:', response)
 
       token.value = response.access
       refreshToken.value = response.refresh
@@ -67,8 +66,6 @@ export const useAuth = () => {
       const { access, refresh, ...userData } = response
       user.value = userData as User
 
-      console.log('🔐 LOGIN COMPOSABLE: User set to:', user.value)
-      console.log('🔐 LOGIN COMPOSABLE: Token set to:', token.value ? 'EXISTS' : 'NULL')
 
       return { success: true, user: userData as User }
     } catch (error: any) {
@@ -100,13 +97,11 @@ export const useAuth = () => {
 
   const refreshAccessToken = async () => {
     if (!refreshToken.value) {
-      console.log('🔐 No refresh token available, logging out...')
       await logout()
       return false
     }
 
     try {
-      console.log('🔄 Refreshing access token...')
       const response = await $fetch<{ access: string }>(
         `${config.public.apiBase}/token/refresh/`,
         {
@@ -116,10 +111,8 @@ export const useAuth = () => {
       )
 
       token.value = response.access
-      console.log('✅ Access token refreshed successfully')
       return true
     } catch (error) {
-      console.log('❌ Token refresh failed, logging out...', error)
       await logout()
       return false
     }

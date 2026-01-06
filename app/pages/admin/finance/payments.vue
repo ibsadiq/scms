@@ -272,11 +272,14 @@ import CollectPaymentDialog from '@/components/finance/CollectPaymentDialog.vue'
 import { useReceipts, type ReceiptFilters } from '~~/composables/admin/useReceipts'
 import { useTerms } from '~~/composables/admin/useTerms'
 import type { Receipt } from '~~/composables/admin/useReceipts'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError, info } = useToast()
 
 const { fetchReceipts } = useReceipts()
 const { fetchTerms } = useTerms()
@@ -389,7 +392,7 @@ const loadReceipts = async () => {
       totalCount.value = 0
     }
   } else if (response.error) {
-    toast.error('Failed to load receipts: ' + response.error)
+    showError('Failed to load receipts: ' + response.error)
     receipts.value = []
     totalCount.value = 0
   } else {
@@ -464,7 +467,7 @@ const printReceipt = (receipt: Receipt) => {
 // Export to Excel
 const exportToExcel = () => {
   // TODO: Implement export functionality
-  toast.info('Export functionality coming soon!')
+  info('Export functionality coming soon!')
 }
 
 // Format date

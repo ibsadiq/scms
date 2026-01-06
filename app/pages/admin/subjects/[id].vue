@@ -224,7 +224,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 
 definePageMeta({
@@ -246,6 +247,8 @@ interface Department {
   id: number
   name: string
 }
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const router = useRouter()
@@ -299,11 +302,11 @@ const handleSubmit = async () => {
   )
 
   if (data) {
-    toast.success('Subject updated successfully')
+    showSuccessToast('Subject updated successfully')
     originalData.value = { ...subject.value }
     editMode.value = false
   } else {
-    toast.error('Failed to update subject', {
+    showError('Failed to update subject', {
       description: apiError || 'An unexpected error occurred. Please try again.'
     })
   }
@@ -327,10 +330,10 @@ const handleDelete = async () => {
   })
 
   if (!apiError) {
-    toast.success('Subject deleted successfully')
+    showSuccessToast('Subject deleted successfully')
     router.push('/admin/subjects')
   } else {
-    toast.error('Failed to delete subject', {
+    showError('Failed to delete subject', {
       description: apiError
     })
   }

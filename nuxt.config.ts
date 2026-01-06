@@ -35,7 +35,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      productName: 'ScholAfric',
+      productName: 'SSync',
       appLogo: '/logo.png',
       apiBase: 'http://localhost:8000/api',
       // Set to 'multi' for subdomain-based tenants or 'single' for standalone deployment

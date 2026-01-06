@@ -15,9 +15,7 @@
     </div>
 
     <div class="flex items-center gap-4">
-      <Button variant="ghost" size="icon">
-        <Icon name="lucide:bell" class="w-5 h-5" />
-      </Button>
+      <NotificationDropdown view-all-link="/admin/notifications" />
 
       <ThemeToggle />
 
@@ -126,7 +124,6 @@ const handleLogout = async () => {
     isLoggingOut.value = true
     await logout()
   } catch (error) {
-    console.error('Logout failed:', error)
     // Force redirect even on error
     window.location.href = '/login'
   } finally {

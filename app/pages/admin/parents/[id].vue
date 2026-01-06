@@ -252,19 +252,129 @@
 
     <!-- Edit Dialog -->
     <Dialog v-model:open="showEditDialog">
-      <DialogContent class="max-w-2xl">
+      <DialogScrollContent class="sm:max-w-[1200px]">
         <DialogHeader>
           <DialogTitle>Edit Parent</DialogTitle>
           <DialogDescription>Update parent information</DialogDescription>
         </DialogHeader>
-        <div class="text-center py-8">
-          <Icon name="lucide:construction" class="w-12 h-12 mx-auto text-neutral-400 mb-2" />
-          <p class="text-sm text-neutral-600 dark:text-neutral-400">Edit functionality coming soon!</p>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" @click="showEditDialog = false">Close</Button>
-        </DialogFooter>
-      </DialogContent>
+
+        <form @submit.prevent="handleUpdate" class="space-y-6">
+          <!-- Personal Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Personal Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_first_name">First Name *</Label>
+                <Input id="edit_first_name" v-model="editForm.first_name" required />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_middle_name">Middle Name</Label>
+                <Input id="edit_middle_name" v-model="editForm.middle_name" />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_last_name">Last Name *</Label>
+                <Input id="edit_last_name" v-model="editForm.last_name" required />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_date_of_birth">Date of Birth</Label>
+                <Input id="edit_date_of_birth" v-model="editForm.date_of_birth" type="date" />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_gender">Gender</Label>
+                <select id="edit_gender" v-model="editForm.gender" class="flex h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm ring-offset-white dark:ring-offset-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 dark:focus-visible:ring-neutral-300">
+                  <option :value="null">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_parent_type">Relationship *</Label>
+                <select id="edit_parent_type" v-model="editForm.parent_type" required class="flex h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm ring-offset-white dark:ring-offset-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 dark:focus-visible:ring-neutral-300">
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Guardian">Guardian</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Contact Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_email">Primary Email</Label>
+                <Input id="edit_email" v-model="editForm.email" type="email" />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_alt_email">Alternative Email</Label>
+                <Input id="edit_alt_email" v-model="editForm.alt_email" type="email" />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_phone_number">Phone Number *</Label>
+                <Input id="edit_phone_number" v-model="editForm.phone_number" required />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_address">Address</Label>
+                <Input id="edit_address" v-model="editForm.address" />
+              </div>
+            </div>
+          </div>
+
+          <!-- National IDs & Employment -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Additional Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="space-y-2">
+                <Label for="edit_national_id">National ID</Label>
+                <Input id="edit_national_id" v-model="editForm.national_id" />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_occupation">Occupation</Label>
+                <Input id="edit_occupation" v-model="editForm.occupation" />
+              </div>
+              <div class="space-y-2">
+                <Label for="edit_monthly_income">Monthly Income (UGX)</Label>
+                <Input id="edit_monthly_income" v-model.number="editForm.monthly_income" type="number" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Status</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex items-center space-x-2">
+                <input
+                  id="edit_single_parent"
+                  type="checkbox"
+                  v-model="editForm.single_parent"
+                  class="h-4 w-4 rounded border-neutral-300 dark:border-neutral-700 text-primary-600 focus:ring-primary-500"
+                />
+                <Label for="edit_single_parent" class="font-normal cursor-pointer">Single Parent</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <input
+                  id="edit_inactive"
+                  type="checkbox"
+                  v-model="editForm.inactive"
+                  class="h-4 w-4 rounded border-neutral-300 dark:border-neutral-700 text-primary-600 focus:ring-primary-500"
+                />
+                <Label for="edit_inactive" class="font-normal cursor-pointer">Mark as Inactive</Label>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditDialog = false">Cancel</Button>
+            <Button type="submit" :disabled="updating">
+              <Icon v-if="updating" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
+              {{ updating ? 'Saving...' : 'Save Changes' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogScrollContent>
     </Dialog>
   </div>
 </template>
@@ -273,10 +383,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DialogScrollContent } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useParents } from '~~/composables/admin/useParents'
 import { useInvitations, type Invitation } from '~~/composables/admin/useInvitations'
 import type { Parent } from '~~/types'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: 'admin',
@@ -284,20 +397,63 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
-const { fetchParent, deleteParent } = useParents()
+const { fetchParent, updateParent, deleteParent } = useParents()
 const { fetchInvitationByProfileId, resendInvitation } = useInvitations()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const parent = ref<Parent | null>(null)
 const loading = ref(true)
 const showEditDialog = ref(false)
 const invitation = ref<Invitation | null>(null)
 const resendingInvitation = ref(false)
+const updating = ref(false)
+
+const editForm = ref({
+  first_name: '',
+  middle_name: '',
+  last_name: '',
+  email: '',
+  phone_number: '',
+  alt_email: '',
+  address: '',
+  gender: null as 'Male' | 'Female' | null,
+  date_of_birth: '',
+  parent_type: 'Father' as 'Father' | 'Mother' | 'Guardian' | 'Other',
+  national_id: '',
+  occupation: '',
+  monthly_income: null as number | null,
+  single_parent: false,
+  inactive: false
+})
+
+// Watch for edit dialog open and initialize form
+watch(showEditDialog, (newValue) => {
+  if (newValue && parent.value) {
+    editForm.value = {
+      first_name: parent.value.first_name || '',
+      middle_name: parent.value.middle_name || '',
+      last_name: parent.value.last_name || '',
+      email: parent.value.email || '',
+      phone_number: parent.value.phone_number || '',
+      alt_email: parent.value.alt_email || '',
+      address: parent.value.address || '',
+      gender: parent.value.gender || null,
+      date_of_birth: parent.value.date_of_birth || '',
+      parent_type: parent.value.parent_type || 'Father',
+      national_id: parent.value.national_id || '',
+      occupation: parent.value.occupation || '',
+      monthly_income: parent.value.monthly_income || null,
+      single_parent: parent.value.single_parent || false,
+      inactive: parent.value.inactive || false
+    }
+  }
+})
 
 // Load parent data
 onMounted(async () => {
   const id = Number(route.params.id)
   if (isNaN(id)) {
-    toast.error('Invalid parent ID')
+    showErrorToast('Invalid parent ID', 'Error')
     router.push('/admin/parents')
     return
   }
@@ -312,9 +468,39 @@ onMounted(async () => {
     const invitationData = await fetchInvitationByProfileId('parent', id)
     invitation.value = invitationData || null
   } else {
-    toast.error(response.error || 'Failed to load parent')
+    showErrorToast(response.error, 'Failed to load parent')
+  }
+
+  // Check if edit query parameter is present and open edit dialog
+  if (route.query.edit === 'true') {
+    showEditDialog.value = true
   }
 })
+
+// Handle update
+const handleUpdate = async () => {
+  if (!parent.value) return
+
+  updating.value = true
+
+  const payload = {
+    ...editForm.value,
+    // Convert empty date strings to null
+    date_of_birth: editForm.value.date_of_birth || null
+  }
+
+  const response = await updateParent(parent.value.id!, payload)
+
+  if (response.error) {
+    showErrorToast(response.error, 'Failed to update parent')
+  } else {
+    showSuccessToast(`${editForm.value.first_name} ${editForm.value.last_name} updated successfully`)
+    parent.value = response.data!
+    showEditDialog.value = false
+  }
+
+  updating.value = false
+}
 
 // Handle delete
 const handleDelete = async () => {
@@ -326,9 +512,9 @@ const handleDelete = async () => {
 
   const response = await deleteParent(parent.value.id!)
   if (response.error) {
-    toast.error('Failed to delete parent: ' + response.error)
+    showErrorToast(response.error, 'Failed to delete parent')
   } else {
-    toast.success(`${parent.value.first_name} ${parent.value.last_name} deleted successfully`)
+    showSuccessToast(`${parent.value.first_name} ${parent.value.last_name} deleted successfully`)
     router.push('/admin/parents')
   }
 }
@@ -385,9 +571,9 @@ const handleResendInvitation = async () => {
   resendingInvitation.value = false
 
   if (response.error) {
-    toast.error('Failed to resend invitation')
+    showErrorToast(response.error, 'Failed to resend invitation')
   } else {
-    toast.success('Invitation resent successfully')
+    showSuccessToast('Invitation resent successfully')
   }
 }
 
@@ -400,9 +586,9 @@ const copyInvitationLink = async () => {
 
   try {
     await navigator.clipboard.writeText(link)
-    toast.success('Invitation link copied to clipboard')
+    showSuccessToast('Invitation link copied to clipboard')
   } catch (err) {
-    toast.error('Failed to copy link')
+    showErrorToast(err, 'Failed to copy link')
   }
 }
 </script>

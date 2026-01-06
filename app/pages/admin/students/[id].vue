@@ -423,11 +423,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useStudents } from '~~/composables/admin/useStudents'
 import { useApi } from '~~/composables/useApi'
 import type { Student, ClassLevel } from '~~/types'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const router = useRouter()
@@ -496,7 +499,7 @@ watch(showEditDialog, (newValue) => {
 onMounted(async () => {
   const id = Number(route.params.id)
   if (isNaN(id)) {
-    toast.error('Invalid student ID')
+    showError('Invalid student ID')
     router.push('/admin/students')
     return
   }
@@ -511,7 +514,7 @@ onMounted(async () => {
   if (studentResponse.data) {
     student.value = studentResponse.data
   } else {
-    toast.error(studentResponse.error || 'Failed to load student')
+    showError(studentResponse.error || 'Failed to load student')
   }
 
   if (classLevelsResponse.data) {
@@ -525,12 +528,19 @@ const handleUpdate = async () => {
 
   saving.value = true
 
-  const response = await updateStudent(student.value.id!, editForm.value)
+  const payload = {
+    ...editForm.value,
+    // Convert empty date strings to null
+    date_of_birth: editForm.value.date_of_birth || null,
+    admission_date: editForm.value.admission_date || null
+  }
+
+  const response = await updateStudent(student.value.id!, payload)
 
   if (response.error) {
-    toast.error('Failed to update student: ' + response.error)
+    showErrorToast(response.error, 'Failed to update student')
   } else {
-    toast.success(`${editForm.value.first_name} ${editForm.value.last_name} updated successfully`)
+    showSuccessToast(`${editForm.value.first_name} ${editForm.value.last_name} updated successfully`)
     student.value = response.data!
     showEditDialog.value = false
   }
@@ -548,9 +558,9 @@ const handleDelete = async () => {
 
   const response = await deleteStudent(student.value.id!)
   if (response.error) {
-    toast.error('Failed to delete student: ' + response.error)
+    showError('Failed to delete student: ' + response.error)
   } else {
-    toast.success(`${student.value.first_name} ${student.value.last_name} deleted successfully`)
+    showSuccessToast(`${student.value.first_name} ${student.value.last_name} deleted successfully`)
     router.push('/admin/students')
   }
 }

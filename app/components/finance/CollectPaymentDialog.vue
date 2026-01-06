@@ -277,7 +277,7 @@ import { useReceipts } from '~~/composables/admin/useReceipts'
 import { useFinance } from '~~/composables/admin/useFinance'
 import { useStudents } from '~~/composables/admin/useStudents'
 import { useTerms } from '~~/composables/admin/useTerms'
-import { toast } from 'vue-sonner'
+import { useToast } from '~~/composables/useToast'
 
 const props = defineProps<{
   open: boolean
@@ -292,6 +292,7 @@ const { createReceipt, allocateReceiptToFees } = useReceipts()
 const { fetchStudentBalance } = useFinance()
 const { searchStudents: apiSearchStudents } = useStudents()
 const { fetchTerms } = useTerms()
+const { info: showInfo, error: showError, success: showSuccess, warning: showWarning } = useToast()
 
 // Form data
 const formData = ref({
@@ -437,7 +438,7 @@ const validateAllocation = () => {
 // Select all unpaid fees
 const selectAllUnpaidFees = () => {
   if (!formData.value.amount || formData.value.amount <= 0) {
-    toast.error('Please enter payment amount first')
+    showError('Please enter payment amount first')
     return
   }
 
@@ -459,16 +460,16 @@ const selectAllUnpaidFees = () => {
   })
 
   if (remainingAmount < formData.value.amount) {
-    toast.success('Fees selected and allocated')
+    showSuccess('Fees selected and allocated')
   } else {
-    toast.info('Enter a payment amount to allocate to fees')
+    showInfo('Enter a payment amount to allocate to fees')
   }
 }
 
 // Handle submit
 const handleSubmit = async () => {
   if (!isFormValid.value) {
-    toast.error('Please fill all required fields')
+    showError('Please fill all required fields')
     return
   }
 
@@ -480,14 +481,14 @@ const handleSubmit = async () => {
       payer: formData.value.payer,
       student: formData.value.student,
       amount: formData.value.amount!,
-      paid_through: formData.value.paid_through,
+      paid_through: formData.value.paid_through || undefined,
       term: Number(formData.value.term),
       payment_date: formData.value.payment_date,
       reference_number: formData.value.reference_number,
     })
 
     if (receiptResponse.error) {
-      toast.error(receiptResponse.error)
+      showError(receiptResponse.error)
       submitting.value = false
       return
     }
@@ -507,17 +508,16 @@ const handleSubmit = async () => {
       )
 
       if (allocationResponse.error) {
-        toast.warning('Receipt created but fee allocation failed: ' + allocationResponse.error)
+        showWarning('Receipt created but fee allocation failed: ' + allocationResponse.error)
       }
     }
 
-    toast.success(`Payment recorded successfully! Receipt #${receiptResponse.data!.receipt_number}`)
+    showSuccess(`Payment recorded successfully! Receipt #${receiptResponse.data!.receipt_number}`)
     resetForm()
     emit('success')
     closeDialog()
   } catch (error) {
-    toast.error('Failed to create receipt')
-    console.error(error)
+    showError('Failed to create receipt')
   } finally {
     submitting.value = false
   }

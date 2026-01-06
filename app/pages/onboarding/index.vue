@@ -4,9 +4,9 @@
       <!-- Header -->
       <div class="text-center mb-8 sm:mb-12">
         <div class="w-28 h-28 sm:w-32 sm:h-32 mx-auto mb-4">
-          <img src="/logo.png" alt="ScholAfric" class="w-full h-full object-contain" />
+          <img src="/logo.png" alt="SSync" class="w-full h-full object-contain" />
         </div>
-        <h1 class="text-3xl sm:text-4xl font-bold text-foreground mb-2 text-balance">Welcome to ScholAfric</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-foreground mb-2 text-balance">Welcome to SSync</h1>
         <p class="text-base sm:text-lg text-muted-foreground">Let's get your school set up in just a few steps</p>
       </div>
 
@@ -280,7 +280,7 @@
               </div>
               <CardHeader class="px-0">
                 <CardTitle class="text-2xl">Setup Complete!</CardTitle>
-                <CardDescription class="text-base">Your ScholAfric instance is ready to use</CardDescription>
+                <CardDescription class="text-base">Your SSync instance is ready to use</CardDescription>
               </CardHeader>
 
               <Alert class="mt-6 text-left">
@@ -350,11 +350,13 @@ import {
 import { ONBOARDING_STEPS } from '~~/constants/onboarding'
 import { useOnboarding } from '~~/composables/useOnboarding'
 import { useSettings } from '~~/composables/useSettings'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: false,
 })
+
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 /**
  * 🔹 Single source of truth
@@ -362,7 +364,6 @@ definePageMeta({
 const {
   currentStep,
   loading,
-  error,
   createTenant,
   createAdminUser,
   configureSettings,
@@ -445,7 +446,7 @@ onMounted(async () => {
         school_name: schoolData.school_name,
         primary_color: schoolData.primary_color,
         secondary_color: schoolData.secondary_color,
-        school_logo_url: schoolData.school_logo_url,
+        app_logo_url: schoolData.school_logo_url || schoolData.app_logo_url,
       })
       console.log('🎨 [ONBOARDING] Applied settings to document')
     } else {
@@ -535,13 +536,13 @@ const handleStep1Submit = async () => {
     await refreshStatus()
   } catch (err: any) {
     const errorMessage = err?.data?.detail ?? err?.data?.message ?? err?.message ?? 'Failed to create school'
-    toast.error('Failed to create school', { description: errorMessage })
+    showErrorToast(errorMessage , 'Failed to create school')
   }
 }
 
 const handleStep2Submit = async () => {
   if (step2Data.value.password !== step2Data.value.confirm_password) {
-    toast.error('Validation error', { description: 'Passwords do not match' })
+    showErrorToast('Passwords do not match' , 'Validation error')
     return
   }
 
@@ -550,7 +551,7 @@ const handleStep2Submit = async () => {
     await refreshStatus()
   } catch (err: any) {
     const errorMessage = err?.data?.detail ?? err?.data?.message ?? err?.message ?? 'Failed to create admin user'
-    toast.error('Failed to create admin user', { description: errorMessage })
+    showErrorToast(errorMessage , 'Failed to create admin user')
   }
 }
 
@@ -595,7 +596,7 @@ const handleStep3Submit = async () => {
     await refreshStatus()
   } catch (err: any) {
     const errorMessage = err?.data?.detail ?? err?.data?.message ?? err?.message ?? 'Failed to save branding'
-    toast.error('Failed to save branding', { description: errorMessage })
+    showErrorToast(errorMessage , 'Failed to save branding')
   }
 }
 
@@ -605,7 +606,7 @@ const handleSkipBranding = async () => {
     await navigateTo('/login', { replace: true, external: true })
   } catch (err: any) {
     const errorMessage = err?.data?.detail ?? err?.data?.message ?? err?.message ?? 'Failed to skip to completion'
-    toast.error('Failed to skip to completion', { description: errorMessage })
+    showErrorToast(errorMessage , 'Failed to skip to completion')
   }
 }
 
@@ -616,7 +617,7 @@ const handleCompleteOnboarding = async () => {
     await navigateTo('/login', { replace: true, external: true })
   } catch (err: any) {
     const errorMessage = err?.data?.detail ?? err?.data?.message ?? err?.message ?? 'Failed to complete onboarding'
-    toast.error('Failed to complete onboarding', { description: errorMessage })
+    showErrorToast(errorMessage , 'Failed to complete onboarding')
   }
 }
 </script>

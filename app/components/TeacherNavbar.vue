@@ -14,9 +14,7 @@
     </div>
       <div class="flex items-center gap-4">
         <!-- Notifications -->
-        <Button variant="ghost" size="icon">
-          <Icon name="lucide:bell" class="w-5 h-5" />
-        </Button>
+        <NotificationDropdown view-all-link="/teacher/notifications" />
 
         <!-- Theme Toggle -->
         <ThemeToggle />
@@ -87,16 +85,6 @@ defineProps<{
 const { school, product, schoolLogo } = useBrand()
 
 const displayName = computed(() => school() || product())
-
-const formattedDate = computed(() => {
-  const today = new Date()
-  return today.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-})
 
 const authStore = useAuthStore()
 

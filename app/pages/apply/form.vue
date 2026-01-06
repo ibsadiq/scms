@@ -304,7 +304,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useBrand } from '~~/composables/useBrand'
 import { useAdmission } from '~~/composables/useAdmission'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionSession, AdmissionFeeStructure, CreateApplicationRequest, Gender } from '~~/types/admission'
 
 definePageMeta({
@@ -404,7 +404,7 @@ const handleSubmit = async () => {
     // Save tracking token
     localStorage.setItem('admission_tracking_token', result.tracking_token || '')
 
-    toast.success('Application submitted successfully!')
+    showSuccessToast('Application submitted successfully!')
 
     // Redirect to view application
     navigateTo(`/apply/view/${result.tracking_token}`)

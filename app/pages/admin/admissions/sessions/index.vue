@@ -245,13 +245,16 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
 import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionSession } from '~~/types/admission'
 import type { AcademicYear } from '~~/types'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const { adminAPI } = useAdmissionAdmin()
 const { fetchAcademicYears } = useAcademicYears()
@@ -291,7 +294,7 @@ const loadAcademicYears = async () => {
     }
   } catch (error) {
     console.error('Error loading academic years:', error)
-    toast.error('Failed to load academic years')
+    showError('Failed to load academic years')
   }
 }
 
@@ -301,7 +304,7 @@ const loadSessions = async () => {
     sessions.value = await adminAPI.listSessions()
   } catch (error) {
     console.error('Error loading sessions:', error)
-    toast.error('Failed to load sessions')
+    showError('Failed to load sessions')
   } finally {
     loading.value = false
   }
@@ -328,22 +331,22 @@ const saveSession = async () => {
   try {
     // Validation: if acceptance fee is required, we must have a positive deadline value
     if (sessionForm.value.require_acceptance_fee && (!sessionForm.value.acceptance_fee_deadline_days || sessionForm.value.acceptance_fee_deadline_days <= 0)) {
-      toast.error('Please enter a positive Acceptance Fee Deadline (days) when acceptance fees are required.')
+      showError('Please enter a positive Acceptance Fee Deadline (days) when acceptance fees are required.')
       isSaving.value = false
       return
     }
     if (editingSession.value) {
       await adminAPI.updateSession(editingSession.value.id, sessionForm.value)
-      toast.success('Session updated successfully')
+      showSuccessToast('Session updated successfully')
     } else {
       await adminAPI.createSession(sessionForm.value)
-      toast.success('Session created successfully')
+      showSuccessToast('Session created successfully')
     }
     closeDialog()
     await loadSessions()
   } catch (error: any) {
     console.error('Error saving session:', error)
-    toast.error(error.data?.detail || 'Failed to save session')
+    showError(error.data?.detail || 'Failed to save session')
   } finally {
     isSaving.value = false
   }
@@ -354,11 +357,11 @@ const activateSession = async (id: number) => {
 
   try {
     await adminAPI.activateSession(id)
-    toast.success('Session activated successfully')
+    showSuccessToast('Session activated successfully')
     await loadSessions()
   } catch (error: any) {
     console.error('Error activating session:', error)
-    toast.error(error.data?.detail || 'Failed to activate session')
+    showError(error.data?.detail || 'Failed to activate session')
   }
 }
 

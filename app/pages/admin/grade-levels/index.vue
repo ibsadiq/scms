@@ -104,7 +104,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 
 definePageMeta({
@@ -116,6 +117,8 @@ interface GradeLevel {
   id?: number
   name: string
 }
+
+const { success, error: showError } = useToast()
 
 const { apiCall } = useApi()
 
@@ -149,10 +152,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = gradeLevels.value.findIndex(g => g.id === editingGrade.value!.id)
       if (index !== -1) gradeLevels.value[index] = data
-      toast.success('Grade level updated successfully')
+      showSuccessToast('Grade level updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update grade level', {
+      showError('Failed to update grade level', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -164,10 +167,10 @@ const handleSubmit = async () => {
     )
     if (data) {
       gradeLevels.value.push(data)
-      toast.success('Grade level created successfully')
+      showSuccessToast('Grade level created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create grade level', {
+      showError('Failed to create grade level', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -191,9 +194,9 @@ const handleDelete = async (grade: GradeLevel) => {
 
   if (!apiError) {
     gradeLevels.value = gradeLevels.value.filter(g => g.id !== grade.id)
-    toast.success('Grade level deleted successfully')
+    showSuccessToast('Grade level deleted successfully')
   } else {
-    toast.error('Failed to delete grade level', {
+    showError('Failed to delete grade level', {
       description: apiError
     })
   }

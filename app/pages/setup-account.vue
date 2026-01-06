@@ -93,7 +93,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: false, // Use no layout for standalone page
@@ -168,7 +168,7 @@ const handleSubmit = async () => {
     authStore.setTokens(data.tokens.access, data.tokens.refresh)
     authStore.setUser(data.user)
 
-    toast.success('Account created successfully!', {
+    showSuccessToast('Account created successfully!', {
       description: 'Welcome to the system. Redirecting to your dashboard...'
     })
 

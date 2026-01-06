@@ -241,6 +241,7 @@ import { useClasses } from '~~/composables/teacher/useClasses'
 import { useGrading } from '~~/composables/teacher/useGrading'
 import { useToast } from '~~/composables/useToast'
 import { useApi } from '~~/composables/useApi'
+import { useAuth } from '~~/composables/useAuth'
 
 definePageMeta({
   layout: 'teacher',
@@ -249,12 +250,42 @@ definePageMeta({
 
 const { fetchMyClasses, fetchClassStudents } = useClasses()
 const { submitBulkGrades } = useGrading()
-const { showToast } = useToast()
+const { success, error: showError } = useToast()
 const { apiCall } = useApi()
 
-const myClasses = ref([])
-const terms = ref([])
-const students = ref([])
+interface StudentWithGrade {
+  id: number
+  admission_number: string
+  first_name: string
+  last_name: string
+  email?: string
+  phone?: string
+  photo?: string
+  status: string
+  grade_level_name?: string
+  score: number | null
+  grade: string | null
+  remarks: string
+}
+
+interface ClassData {
+  id: number
+  classroom_id: number
+  classroom_name: string
+  subject_name: string
+  grade_level_name: string
+  student_count: number
+  subject_id: number
+}
+
+interface Term {
+  id: number
+  name: string
+}
+
+const myClasses = ref<ClassData[]>([])
+const terms = ref<Term[]>([])
+const students = ref<StudentWithGrade[]>([])
 const selectedClass = ref('')
 const selectedAssessment = ref('')
 const selectedTerm = ref('')
@@ -300,19 +331,19 @@ const loadStudents = async () => {
       score: null,
       grade: null,
       remarks: ''
-    }))
+    })) as StudentWithGrade[]
   } else if (error) {
-    showToast('Error', 'Failed to load students: ' + error, 'error')
+    showError('Failed to load students', String(error))
   }
 }
 
-const calculateGrade = (student) => {
+const calculateGrade = (student: StudentWithGrade) => {
   if (student.score === null || student.score === '') {
     student.grade = null
     return
   }
 
-  const percentage = (parseFloat(student.score) / maxScore.value) * 100
+  const percentage = (parseFloat(String(student.score)) / maxScore.value) * 100
 
   if (percentage >= 90) student.grade = 'A'
   else if (percentage >= 80) student.grade = 'B'
@@ -322,7 +353,7 @@ const calculateGrade = (student) => {
   else student.grade = 'F'
 }
 
-const getGradeVariant = (grade) => {
+const getGradeVariant = (grade: string) => {
   switch (grade) {
     case 'A': return 'default'
     case 'B': return 'secondary'
@@ -340,6 +371,11 @@ const saveGrades = async () => {
   saving.value = true
 
   const classData = myClasses.value.find(c => c.id === parseInt(selectedClass.value))
+  if (!classData) {
+    showError('Please select a valid class')
+    saving.value = false
+    return
+  }
 
   const gradesData = {
     classroom: classData.classroom_id || classData.id,
@@ -350,7 +386,7 @@ const saveGrades = async () => {
       .filter(s => s.score !== null && s.score !== '')
       .map(student => ({
         student: student.id,
-        score: parseFloat(student.score),
+        score: parseFloat(String(student.score)),
         remarks: student.remarks || ''
       }))
   }
@@ -358,27 +394,95 @@ const saveGrades = async () => {
   const { error } = await submitBulkGrades(gradesData)
 
   if (!error) {
-    showToast('Success', 'Grades saved successfully', 'success')
+    success('Grades saved successfully')
+
+    // Note: Script upload is not available in quick grade entry
+    // Teachers should use the dedicated Marked Scripts page to upload scripts
+    const studentsWithScripts = students.value.filter(s => s.scriptFile)
+    if (studentsWithScripts.length > 0) {
+      showError(
+        'Script upload not available in quick grading',
+        'Please use the Marked Scripts page to upload examination scripts'
+      )
+    }
+
     // Reset scores
     students.value.forEach(s => {
       s.score = null
       s.grade = null
       s.remarks = ''
+      s.scriptFile = null
+      s.hasScript = false
     })
   } else {
-    showToast('Error', 'Failed to save grades: ' + error, 'error')
+    showError('Failed to save grades', String(error))
   }
 
   saving.value = false
 }
 
+const uploadMarkedScripts = async (studentsWithScripts: StudentWithGrade[], classData: ClassData) => {
+  let uploadedCount = 0
+  let failedCount = 0
+
+  for (const student of studentsWithScripts) {
+    if (!student.scriptFile) continue
+
+    const formData = new FormData()
+    formData.append('examination', selectedTerm.value) // Using term as examination for now
+    formData.append('classroom', String(classData.classroom_id || classData.id))
+    formData.append('subject', String(classData.subject_id || classData.id))
+    formData.append('student', String(student.id))
+    formData.append('file', student.scriptFile)
+
+    try {
+      const config = useRuntimeConfig()
+      const { token } = useAuth()
+
+      await $fetch(`${config.public.apiBase}/academic/marked-scripts/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        },
+        body: formData
+      })
+
+      uploadedCount++
+    } catch (err) {
+      console.error(`Failed to upload script for ${student.first_name} ${student.last_name}:`, err)
+      failedCount++
+    }
+  }
+
+  if (uploadedCount > 0) {
+    success(`${uploadedCount} marked script(s) uploaded successfully`)
+  }
+
+  if (failedCount > 0) {
+    showError(`${failedCount} script upload(s) failed`, 'Some scripts could not be uploaded')
+  }
+}
+
 onMounted(async () => {
   const [classesRes, termsRes] = await Promise.all([
     fetchMyClasses(),
-    apiCall('/academic/terms/')
+    apiCall('/administration/terms/')
   ])
 
-  if (classesRes.data) myClasses.value = classesRes.data
+  if (classesRes.data) {
+    // For grading, only show teaching assignments (allocated subjects)
+    const teaching = (classesRes.data as any).teaching_assignments || []
+
+    myClasses.value = teaching.map((cls: any) => ({
+      id: cls.id,
+      classroom_id: cls.classroom_id,
+      classroom_name: cls.classroom_name,
+      subject_name: cls.subject_name,
+      grade_level_name: cls.grade_level_name,
+      student_count: cls.student_count,
+      subject_id: cls.id // Allocated subject ID for grades
+    }))
+  }
   if (termsRes.data) terms.value = termsRes.data
 })
 </script>

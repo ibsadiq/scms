@@ -54,7 +54,6 @@ export const useStudentAuth = () => {
         }
       )
 
-      console.log('📝 STUDENT REGISTER: Response received:', response)
 
       // Set tokens
       token.value = response.access
@@ -67,13 +66,11 @@ export const useStudentAuth = () => {
       if (process.client) {
         try {
           localStorage.setItem('student_data', JSON.stringify(response.student))
-          console.log('📝 STUDENT REGISTER: Student data saved to localStorage')
         } catch (error) {
           console.error('📝 STUDENT REGISTER: Failed to save to localStorage:', error)
         }
       }
 
-      console.log('📝 STUDENT REGISTER: Student data set:', studentData.value)
 
       return {
         success: true,
@@ -129,7 +126,6 @@ export const useStudentAuth = () => {
         }
       )
 
-      console.log('🔐 STUDENT LOGIN: Response received:', response)
 
       // Set tokens
       token.value = response.access
@@ -142,13 +138,11 @@ export const useStudentAuth = () => {
       if (process.client) {
         try {
           localStorage.setItem('student_data', JSON.stringify(response.student))
-          console.log('🔐 STUDENT LOGIN: Student data saved to localStorage')
         } catch (error) {
           console.error('🔐 STUDENT LOGIN: Failed to save to localStorage:', error)
         }
       }
 
-      console.log('🔐 STUDENT LOGIN: Student data set:', studentData.value)
 
       return {
         success: true,
@@ -191,13 +185,11 @@ export const useStudentAuth = () => {
    */
   const refreshAccessToken = async () => {
     if (!refreshToken.value) {
-      console.log('🔐 No refresh token available, logging out...')
       await logout()
       return false
     }
 
     try {
-      console.log('🔄 Refreshing student access token...')
       const response = await $fetch<{ access: string }>(
         `${config.public.apiBase}/token/refresh/`,
         {
@@ -207,10 +199,8 @@ export const useStudentAuth = () => {
       )
 
       token.value = response.access
-      console.log('✅ Student access token refreshed successfully')
       return true
     } catch (error) {
-      console.log('❌ Student token refresh failed, logging out...', error)
       await logout()
       return false
     }
@@ -239,7 +229,6 @@ export const useStudentAuth = () => {
         }
       )
 
-      console.log('🔒 PASSWORD CHANGE: Success')
 
       return {
         success: true,

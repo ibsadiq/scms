@@ -198,13 +198,17 @@ export interface Subject {
 
 export interface Classroom {
   id?: number
-  name: string
-  class_teacher: string | null
+  name: number | string  // ID for write operations, can be string in legacy responses
+  name_display?: string  // Human-readable class name from backend
+  stream?: number | null
+  stream_name?: string
+  stream_id?: number | null
+  class_teacher: number | string | null
   class_teacher_name?: string
   capacity: number
   occupied_sits: number
   available_sits: number
-  class_status: 'Available' | 'Full' | 'Inactive'
+  class_status: string
   grade_level?: number
   class_level?: number
 }
@@ -453,6 +457,20 @@ export interface ReportCard {
   total_students?: number
   teacher_comments?: string
   principal_comments?: string
+}
+
+export interface MarkedScript {
+  id?: number
+  examination: number
+  examination_name?: string
+  classroom: number
+  classroom_name?: string
+  subject: number
+  subject_name?: string
+  teacher: number
+  teacher_name?: string
+  file: string
+  uploaded_on?: string
 }
 
 // Timetable Types

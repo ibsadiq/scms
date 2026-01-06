@@ -290,11 +290,14 @@ import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
 import { useTerms } from '~~/composables/admin/useTerms'
 import { formatDate } from '~~/utils/helpers'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const { fetchFees, createFee, updateFee, deleteFee } = useFees()
 const { fetchAcademicYears } = useAcademicYears()
@@ -408,10 +411,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = fees.value.findIndex(f => f.id === editingFee.value!.id)
       if (index !== -1) fees.value[index] = data
-      toast.success('Fee structure updated successfully')
+      showSuccessToast('Fee structure updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update fee structure', {
+      showError('Failed to update fee structure', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -419,10 +422,10 @@ const handleSubmit = async () => {
     const { data, error: apiError } = await createFee(formData.value as FeeStructure)
     if (data) {
       fees.value.push(data)
-      toast.success('Fee structure created successfully')
+      showSuccessToast('Fee structure created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create fee structure', {
+      showError('Failed to create fee structure', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -437,9 +440,9 @@ const handleDelete = async (fee: FeeStructure) => {
   const { error: apiError } = await deleteFee(fee.id!)
   if (!apiError) {
     fees.value = fees.value.filter(f => f.id !== fee.id)
-    toast.success('Fee structure deleted successfully')
+    showSuccessToast('Fee structure deleted successfully')
   } else {
-    toast.error('Failed to delete fee structure', {
+    showError('Failed to delete fee structure', {
       description: apiError
     })
   }

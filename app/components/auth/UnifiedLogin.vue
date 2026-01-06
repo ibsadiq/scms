@@ -123,13 +123,6 @@
             </div>
           </div>
 
-          <!-- Error Alert -->
-          <Alert v-if="error" variant="destructive" class="animate-in fade-in slide-in-from-top-2">
-            <Icon name="lucide:alert-circle" class="h-4 w-4" />
-            <AlertTitle>Login Failed</AlertTitle>
-            <AlertDescription>{{ error }}</AlertDescription>
-          </Alert>
-
           <!-- Sign In Button -->
           <Button
             type="submit"
@@ -191,12 +184,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useAuth } from '~~/composables/useAuth'
 import { useStudentAuth } from '~~/composables/useStudentAuth'
 import { useSettings } from '~~/composables/useSettings'
 import { useBrand } from '~~/composables/useBrand'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 // Props
 const props = defineProps<{
@@ -210,6 +202,7 @@ const { product, preferSchool, appLogo } = useBrand()
 
 // Initialize as reactive refs that will be populated on client side
 const schoolLogoUrl = useState<string | undefined>('school_logo_url', () => undefined)
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 const schoolName = useState<string>('school_name', () => preferSchool())
 
 // Try to get cached settings from localStorage first
@@ -240,13 +233,6 @@ if (typeof window !== 'undefined') {
     if ((cachedSettings as any).secondary_color) {
       applySecondaryColor((cachedSettings as any).secondary_color)
     }
-
-    console.log('✅ [UnifiedLogin] Loaded from cache:', {
-      logo: schoolLogoUrl.value,
-      name: schoolName.value,
-      primary: cachedSettings.primary_color,
-      secondary: (cachedSettings as any).secondary_color
-    })
   }
 }
 
@@ -299,7 +285,6 @@ const credentials = ref({
   password: ''
 })
 const loading = ref(false)
-const error = ref('')
 const showPassword = ref(false)
 
 // Segmented control state (mobile only)
@@ -342,7 +327,6 @@ const updatePillPosition = () => {
 
 const handleLogin = async () => {
   loading.value = true
-  error.value = ''
 
   try {
     if (userType.value === 'student') {
@@ -353,10 +337,10 @@ const handleLogin = async () => {
       })
 
       if (result.success) {
-        toast.success('Welcome back, ' + result.student?.first_name + '!')
+        showSuccessToast('Welcome back, ' + result.student?.first_name + '!')
         await router.push('/student')
       } else {
-        error.value = result.error || 'Invalid phone number or password'
+        showErrorToast({ data: { detail: result.error || 'Invalid phone number or password' } }, 'Login Failed')
       }
     } else {
       // Staff/Parent login
@@ -367,7 +351,7 @@ const handleLogin = async () => {
 
       if (result.success) {
         const user = result.user
-        toast.success('Welcome back!')
+        showSuccessToast('Welcome back!')
 
         // Redirect based on role
         if (user?.isAdmin) {
@@ -380,12 +364,12 @@ const handleLogin = async () => {
           await router.push('/')
         }
       } else {
-        error.value = result.error || 'Invalid email or password'
+        showErrorToast({ data: { detail: result.error || 'Invalid email or password' } }, 'Login Failed')
       }
     }
   } catch (err: any) {
-    error.value = err.message || 'An unexpected error occurred'
-    console.error('Login error:', err)
+    const errorMessage = String(err?.data?.detail || err?.message || 'An unexpected error occurred')
+    showErrorToast({ data: { detail: errorMessage } }, 'Login Failed')
   } finally {
     loading.value = false
   }
@@ -395,7 +379,6 @@ const handleLogin = async () => {
 watch(userType, () => {
   credentials.value.identifier = ''
   credentials.value.password = ''
-  error.value = ''
   updatePillPosition()
 })
 
@@ -406,7 +389,6 @@ onMounted(async () => {
 
   // If settings are not loaded yet (no logo and default school name), fetch them
   if (!schoolLogoUrl.value && schoolName.value === 'School Management System') {
-    console.log('⚠️ [UnifiedLogin] No cached settings found, fetching from API...')
     try {
       const { data } = await fetchSettingsPublic(false)
       if (data) {
@@ -421,16 +403,8 @@ onMounted(async () => {
         if ((data as any).secondary_color) {
           applySecondaryColor((data as any).secondary_color)
         }
-
-        console.log('✅ [UnifiedLogin] Loaded from API:', {
-          logo: schoolLogoUrl.value,
-          name: schoolName.value,
-          primary: data.primary_color,
-          secondary: (data as any).secondary_color
-        })
       }
     } catch (error) {
-      console.error('❌ [UnifiedLogin] Failed to fetch school settings:', error)
     }
   }
 })

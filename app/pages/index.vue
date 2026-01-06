@@ -2,7 +2,7 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50">
     <div class="text-center">
-      <!-- School Logo or Default ScholAfric Logo -->
+      <!-- School Logo or Default SSync Logo -->
       <div class="w-32 h-32 mx-auto mb-6">
         <img
           :src="schoolLogoUrl || '/logo.png'"
@@ -31,7 +31,7 @@ const preloadedLogo = (window as any).__SCHOOL_LOGO_URL__
 const preloadedName = (window as any).__SCHOOL_NAME__
 
 const schoolLogoUrl = useState<string | undefined>('school_logo_url', () => preloadedLogo || undefined)
-const schoolName = useState<string>('school_name', () => preloadedName || 'ScholAfric')
+const schoolName = useState<string>('school_name', () => preloadedName || 'SSync')
 
 const { isAuthenticated, user } = useAuth()
 

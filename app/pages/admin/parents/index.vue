@@ -11,7 +11,7 @@
           <Icon name="lucide:upload" class="w-4 h-4 mr-2" />
           Bulk Upload
         </Button>
-        <Button @click="navigateTo('/admin/parents/create')" class="w-full sm:w-auto">
+        <Button @click="showCreateDialog = true" class="w-full sm:w-auto">
           <Icon name="lucide:plus" class="w-4 h-4 mr-2" />
           New Parent/Guardian
         </Button>
@@ -53,7 +53,7 @@
         <div v-else-if="filteredParents.length === 0" class="text-center py-12">
           <Icon name="lucide:users" class="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
           <p class="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">No parents found</p>
-          <Button @click="navigateTo('/admin/parents/create')" variant="outline" class="mt-4 w-full sm:w-auto">
+          <Button @click="showCreateDialog = true" variant="outline" class="mt-4 w-full sm:w-auto">
             Add Your First Parent/Guardian
           </Button>
         </div>
@@ -270,6 +270,271 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Create Parent Dialog -->
+    <Dialog v-model:open="showCreateDialog">
+      <DialogScrollContent class="sm:max-w-[1200px]">
+        <DialogHeader>
+          <DialogTitle class="text-lg sm:text-xl">Add New Parent/Guardian</DialogTitle>
+          <DialogDescription class="text-sm">
+            Register a new parent or guardian
+          </DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleCreateSubmit" class="space-y-6">
+          <!-- Personal Information -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Personal Information</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="space-y-2">
+                <Label for="create_first_name">First Name *</Label>
+                <Input
+                  id="create_first_name"
+                  v-model="createFormData.first_name"
+                  placeholder="John"
+                  required
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="create_middle_name">Middle Name</Label>
+                <Input
+                  id="create_middle_name"
+                  v-model="createFormData.middle_name"
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="create_last_name">Last Name *</Label>
+                <Input
+                  id="create_last_name"
+                  v-model="createFormData.last_name"
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <Label for="create_parent_type">Relationship *</Label>
+                <select
+                  id="create_parent_type"
+                  v-model="createFormData.parent_type"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
+                  required
+                >
+                  <option value="">Select relationship</option>
+                  <option value="Father">Father</option>
+                  <option value="Mother">Mother</option>
+                  <option value="Guardian">Guardian</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div class="space-y-2">
+                <Label for="create_gender">Gender</Label>
+                <select
+                  id="create_gender"
+                  v-model="createFormData.gender"
+                  class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="space-y-2">
+                <Label for="create_national_id">National ID</Label>
+                <Input
+                  id="create_national_id"
+                  v-model="createFormData.national_id"
+                  placeholder="National ID number"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="create_occupation">Occupation</Label>
+                <Input
+                  id="create_occupation"
+                  v-model="createFormData.occupation"
+                  placeholder="e.g., Engineer, Teacher"
+                />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-4 border rounded-lg dark:border-neutral-700">
+              <input
+                id="create_single_parent"
+                v-model="createFormData.single_parent"
+                type="checkbox"
+                class="w-4 h-4 border-gray-300 rounded"
+              />
+              <Label for="create_single_parent" class="cursor-pointer">
+                Single Parent
+              </Label>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Contact Information</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <Label for="create_phone_number">Primary Phone Number *</Label>
+                <Input
+                  id="create_phone_number"
+                  v-model="createFormData.phone_number"
+                  type="tel"
+                  placeholder="+234 800 000 0000"
+                  required
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="create_email">Email</Label>
+                <Input
+                  id="create_email"
+                  v-model="createFormData.email"
+                  type="email"
+                  placeholder="parent@example.com"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <Label for="create_alt_email">Alternative Email</Label>
+              <Input
+                id="create_alt_email"
+                v-model="createFormData.alt_email"
+                type="email"
+                placeholder="alternative@example.com"
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="create_address">Address</Label>
+              <Textarea
+                id="create_address"
+                v-model="createFormData.address"
+                placeholder="Enter full address"
+                rows="3"
+              />
+            </div>
+          </div>
+
+          <!-- Student Association -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Associated Students</h3>
+
+            <div class="space-y-2">
+              <Label for="create_students">Students</Label>
+              <div class="space-y-2">
+                <!-- Selected Students Display -->
+                <div v-if="selectedStudents.length > 0" class="flex flex-wrap gap-2">
+                  <span
+                    v-for="student in selectedStudents"
+                    :key="student.id"
+                    class="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary dark:bg-primary/20"
+                  >
+                    {{ student.first_name }} {{ student.last_name }} ({{ student.admission_number }})
+                    <button
+                      type="button"
+                      @click="removeStudent(student.id!)"
+                      class="ml-1 rounded-sm opacity-70 hover:opacity-100 focus:outline-none"
+                    >
+                      <Icon name="lucide:x" class="w-3 h-3" />
+                    </button>
+                  </span>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                  <Input
+                    v-model="studentSearch"
+                    type="text"
+                    placeholder="Type at least 3 characters to search students..."
+                    @input="handleStudentSearch"
+                  />
+
+                  <!-- Loading State -->
+                  <div v-if="searchingStudents" class="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Icon name="lucide:loader-2" class="w-4 h-4 animate-spin text-neutral-400" />
+                  </div>
+
+                  <!-- Search Results Dropdown -->
+                  <div
+                    v-if="showStudentDropdown && searchResults.length > 0"
+                    class="absolute z-50 w-full mt-1 max-h-60 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md dark:bg-neutral-800 dark:border-neutral-700"
+                  >
+                    <div class="p-1">
+                      <div
+                        v-for="student in searchResults"
+                        :key="student.id"
+                        @click="addStudent(student)"
+                        class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground dark:hover:bg-neutral-700"
+                      >
+                        {{ student.first_name }} {{ student.last_name }} ({{ student.admission_number }})
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- No Results Message -->
+                  <div
+                    v-else-if="showStudentDropdown && searchResults.length === 0 && studentSearch.length >= 3 && !searchingStudents"
+                    class="absolute z-50 w-full mt-1 rounded-md border bg-popover p-4 text-center text-sm text-muted-foreground dark:bg-neutral-800 dark:border-neutral-700"
+                  >
+                    No students found matching "{{ studentSearch }}"
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                Type at least 3 characters to search for students by name or admission number.
+              </p>
+            </div>
+          </div>
+
+          <!-- Account Setup Options -->
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Account Setup</h3>
+            <div class="flex items-start gap-3 p-4 border rounded-lg bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700">
+              <div class="flex items-center h-5">
+                <input
+                  id="create_send_invitation"
+                  v-model="createFormData.send_invitation"
+                  type="checkbox"
+                  class="w-4 h-4 border-gray-300 rounded focus:ring-2 focus:ring-primary-600"
+                />
+              </div>
+              <div class="flex-1">
+                <Label for="create_send_invitation" class="font-medium cursor-pointer">
+                  Send invitation email
+                </Label>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                  The parent will receive an email invitation to set up their own password and activate their account.
+                  If unchecked, a default password will be set automatically.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter class="flex-col sm:flex-row gap-2">
+            <Button type="button" variant="outline" @click="showCreateDialog = false" class="w-full sm:w-auto">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="creating" class="w-full sm:w-auto">
+              <Icon v-if="creating" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
+              {{ creating ? (createFormData.send_invitation ? 'Sending Invitation...' : 'Registering...') : (createFormData.send_invitation ? 'Send Invitation' : 'Register Parent/Guardian') }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogScrollContent>
+    </Dialog>
   </div>
 </template>
 
@@ -301,6 +566,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogScrollContent,
 } from '@/components/ui/dialog'
 import {
   AlertDialog,
@@ -313,16 +579,21 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import type { Parent } from '~~/types'
+import { Textarea } from '@/components/ui/textarea'
+import type { Parent, Student } from '~~/types'
 import { useParents } from '~~/composables/admin/useParents'
 import { useToast } from '~~/composables/useToast'
+import { useApi } from '~~/composables/useApi'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: 'admin',
   // middleware: 'auth'
 })
 
-const { fetchParents, deleteParent, uploadBulkParents } = useParents()
+const { fetchParents, deleteParent, uploadBulkParents, createParent } = useParents()
+const { apiCall } = useApi()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const loading = ref(true)
 const parents = ref<Parent[]>([])
@@ -335,6 +606,36 @@ const selectedFile = ref<File | null>(null)
 const uploading = ref(false)
 const uploadError = ref('')
 const uploadSuccess = ref(false)
+
+// Create dialog state
+const showCreateDialog = ref(false)
+const creating = ref(false)
+
+// Student search state
+const studentSearch = ref('')
+const searchResults = ref<Student[]>([])
+const selectedStudents = ref<Student[]>([])
+const searchingStudents = ref(false)
+const showStudentDropdown = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+const createFormData = ref<Partial<Parent & { send_invitation?: boolean; students?: number[] }>>({
+  first_name: '',
+  middle_name: '',
+  last_name: '',
+  email: '',
+  phone_number: '',
+  alt_email: '',
+  address: '',
+  gender: undefined,
+  parent_type: 'Father',
+  national_id: '',
+  occupation: '',
+  monthly_income: undefined,
+  single_parent: false,
+  students: [],
+  send_invitation: true
+})
 
 const filteredParents = computed(() => {
   let filtered = parents.value
@@ -416,6 +717,127 @@ const handleBulkUpload = async () => {
   }
 
   uploading.value = false
+}
+
+// Search for students by name (backend search)
+const searchStudents = async (query: string) => {
+  if (query.length < 3) {
+    searchResults.value = []
+    showStudentDropdown.value = false
+    return
+  }
+
+  searchingStudents.value = true
+  showStudentDropdown.value = true
+
+  try {
+    const { data } = await apiCall<Student[]>(`/sis/students/?search=${encodeURIComponent(query)}`)
+    if (data) {
+      // Check if data is an array, if not, it might be paginated
+      const students = Array.isArray(data) ? data : (data as any).results || []
+
+      // Filter out already selected students
+      searchResults.value = students.filter(
+        (student: Student) => !createFormData.value.students?.includes(student.id!)
+      )
+    } else {
+      searchResults.value = []
+    }
+  } catch (err) {
+    console.error('Error searching students:', err)
+    searchResults.value = []
+  }
+
+  searchingStudents.value = false
+}
+
+// Handle student search with debounce
+const handleStudentSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  searchTimeout = setTimeout(() => {
+    searchStudents(studentSearch.value)
+  }, 300) // 300ms debounce
+}
+
+// Add student to selection
+const addStudent = (student: Student) => {
+  if (!createFormData.value.students?.includes(student.id!)) {
+    createFormData.value.students = [...(createFormData.value.students || []), student.id!]
+    selectedStudents.value = [...selectedStudents.value, student]
+  }
+  studentSearch.value = ''
+  searchResults.value = []
+  showStudentDropdown.value = false
+}
+
+// Remove student from selection
+const removeStudent = (studentId: number) => {
+  createFormData.value.students = createFormData.value.students?.filter(id => id !== studentId)
+  selectedStudents.value = selectedStudents.value.filter(s => s.id !== studentId)
+}
+
+// Reset create form
+const resetCreateForm = () => {
+  createFormData.value = {
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    email: '',
+    phone_number: '',
+    alt_email: '',
+    address: '',
+    gender: undefined,
+    parent_type: 'Father',
+    national_id: '',
+    occupation: '',
+    monthly_income: undefined,
+    single_parent: false,
+    students: [],
+    send_invitation: true
+  }
+  selectedStudents.value = []
+  studentSearch.value = ''
+  searchResults.value = []
+  showStudentDropdown.value = false
+}
+
+// Handle create form submission
+const handleCreateSubmit = async () => {
+  creating.value = true
+
+  const payload = {
+    ...createFormData.value,
+    // Convert empty date strings to null
+    date_of_birth: createFormData.value.date_of_birth || null
+  }
+
+  const { data, error: apiError } = await createParent(payload as Parent)
+
+  if (data) {
+    // Show success message based on invitation status
+    if (createFormData.value.send_invitation) {
+      showSuccessToast(
+        `Invitation sent to ${createFormData.value.first_name} ${createFormData.value.last_name}`,
+        'They will receive an email to set up their account.'
+      )
+    } else {
+      showSuccessToast(`Parent ${createFormData.value.first_name} ${createFormData.value.last_name} registered successfully`)
+    }
+
+    // Close dialog and reset form
+    showCreateDialog.value = false
+    resetCreateForm()
+
+    // Reload parents list
+    loadData()
+  } else {
+    showErrorToast(apiError, 'Failed to register parent/guardian')
+  }
+
+  creating.value = false
 }
 
 onMounted(() => {

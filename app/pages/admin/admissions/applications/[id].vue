@@ -486,12 +486,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionApplication, AdmissionDocument, ApplicationStatus } from '~~/types/admission'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const { adminAPI } = useAdmissionAdmin()
@@ -553,7 +556,7 @@ const loadApplication = async () => {
     adminNotes.value = application.value.admin_notes || ''
   } catch (error) {
     console.error('Error loading application:', error)
-    toast.error('Failed to load application')
+    showError('Failed to load application')
   } finally {
     loading.value = false
   }
@@ -563,9 +566,9 @@ const saveAdminNotes = async () => {
   isSavingNotes.value = true
   try {
     await adminAPI.updateApplication(id.value, { admin_notes: adminNotes.value })
-    toast.success('Notes saved successfully')
+    showSuccessToast('Notes saved successfully')
   } catch (error) {
-    toast.error('Failed to save notes')
+    showError('Failed to save notes')
   } finally {
     isSavingNotes.value = false
   }
@@ -574,93 +577,93 @@ const saveAdminNotes = async () => {
 const startReview = async () => {
   try {
     await adminAPI.startReview(id.value)
-    toast.success('Review started')
+    showSuccessToast('Review started')
     showStartReviewDialog.value = false
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to start review')
+    showError(error.data?.detail || 'Failed to start review')
   }
 }
 
 const requestDocuments = async () => {
   try {
     await adminAPI.requestDocuments(id.value, requestDocsNotes.value)
-    toast.success('Document request sent')
+    showSuccessToast('Document request sent')
     showRequestDocsDialog.value = false
     requestDocsNotes.value = ''
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to request documents')
+    showError(error.data?.detail || 'Failed to request documents')
   }
 }
 
 const scheduleExam = async () => {
   try {
     await adminAPI.scheduleExam(id.value, examForm.value)
-    toast.success('Exam scheduled successfully')
+    showSuccessToast('Exam scheduled successfully')
     showScheduleExamDialog.value = false
     examForm.value = { exam_date: '', exam_time: '', exam_venue: '' }
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to schedule exam')
+    showError(error.data?.detail || 'Failed to schedule exam')
   }
 }
 
 const markExamCompleted = async () => {
   try {
     await adminAPI.markExamCompleted(id.value)
-    toast.success('Exam marked as completed')
+    showSuccessToast('Exam marked as completed')
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to mark exam as completed')
+    showError(error.data?.detail || 'Failed to mark exam as completed')
   }
 }
 
 const scheduleInterview = async () => {
   try {
     await adminAPI.scheduleInterview(id.value, interviewForm.value)
-    toast.success('Interview scheduled successfully')
+    showSuccessToast('Interview scheduled successfully')
     showScheduleInterviewDialog.value = false
     interviewForm.value = { interview_date: '', interview_time: '', interview_venue: '' }
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to schedule interview')
+    showError(error.data?.detail || 'Failed to schedule interview')
   }
 }
 
 const approveApplication = async () => {
   try {
     await adminAPI.approveApplication(id.value, approvalNotes.value)
-    toast.success('Application approved')
+    showSuccessToast('Application approved')
     showApproveDialog.value = false
     approvalNotes.value = ''
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to approve application')
+    showError(error.data?.detail || 'Failed to approve application')
   }
 }
 
 const rejectApplication = async () => {
   try {
     await adminAPI.rejectApplication(id.value, rejectionReason.value)
-    toast.success('Application rejected')
+    showSuccessToast('Application rejected')
     showRejectDialog.value = false
     rejectionReason.value = ''
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to reject application')
+    showError(error.data?.detail || 'Failed to reject application')
   }
 }
 
 const withdrawApplication = async () => {
   try {
     await adminAPI.withdrawApplication(id.value, withdrawalReason.value)
-    toast.success('Application withdrawn')
+    showSuccessToast('Application withdrawn')
     showWithdrawDialog.value = false
     withdrawalReason.value = ''
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to withdraw application')
+    showError(error.data?.detail || 'Failed to withdraw application')
   }
 }
 
@@ -669,20 +672,20 @@ const enrollStudent = async () => {
 
   try {
     const result = await adminAPI.enrollStudent(id.value)
-    toast.success(`Student enrolled successfully! Username: ${result.username}`)
+    showSuccessToast(`Student enrolled successfully! Username: ${result.username}`)
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to enroll student')
+    showError(error.data?.detail || 'Failed to enroll student')
   }
 }
 
 const verifyDocument = async (documentId: number) => {
   try {
     await adminAPI.verifyDocument(documentId, 'Document verified')
-    toast.success('Document verified')
+    showSuccessToast('Document verified')
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to verify document')
+    showError(error.data?.detail || 'Failed to verify document')
   }
 }
 
@@ -696,13 +699,13 @@ const rejectDocumentConfirm = async () => {
 
   try {
     await adminAPI.rejectDocument(selectedDocId.value, docRejectionReason.value)
-    toast.success('Document rejected')
+    showSuccessToast('Document rejected')
     showRejectDocumentDialog.value = false
     docRejectionReason.value = ''
     selectedDocId.value = null
     await loadApplication()
   } catch (error: any) {
-    toast.error(error.data?.detail || 'Failed to reject document')
+    showError(error.data?.detail || 'Failed to reject document')
   }
 }
 

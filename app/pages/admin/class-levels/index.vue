@@ -126,7 +126,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import {
   Table,
   TableBody,
@@ -144,6 +144,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useApi } from '~~/composables/useApi'
+import { useToast } from '~~/composables/useToast'
 
 
 definePageMeta({
@@ -161,6 +162,8 @@ interface GradeLevel {
   id: number
   name: string
 }
+
+const { success, error: showError } = useToast()
 
 const { apiCall } = useApi()
 
@@ -207,10 +210,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = classLevels.value.findIndex(c => c.id === editingClassLevel.value!.id)
       if (index !== -1) classLevels.value[index] = data
-      toast.success('Class level updated successfully')
+      showSuccessToast('Class level updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update class level', {
+      showError('Failed to update class level', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -221,10 +224,10 @@ const handleSubmit = async () => {
     )
     if (data) {
       classLevels.value.push(data)
-      toast.success('Class level created successfully')
+      showSuccessToast('Class level created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create class level', {
+      showError('Failed to create class level', {
         description: apiError || 'An unexpected error occurred. Please try again.'
       })
     }
@@ -248,9 +251,9 @@ const handleDelete = async (classLevel: ClassLevel) => {
 
   if (!apiError) {
     classLevels.value = classLevels.value.filter(c => c.id !== classLevel.id)
-    toast.success('Class level deleted successfully')
+    showSuccessToast('Class level deleted successfully')
   } else {
-    toast.error('Failed to delete class level', {
+    showError('Failed to delete class level', {
       description: apiError
     })
   }

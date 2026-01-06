@@ -7,7 +7,7 @@ definePageMeta({
 
 const cfg = useRuntimeConfig()
 useHead({
-  title: `Sign In · ${cfg.public?.productName || 'ScholAfric'}`
+  title: `Sign In · ${cfg.public?.productName || 'SSync'}`
 })
 </script>
 

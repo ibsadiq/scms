@@ -227,12 +227,35 @@ definePageMeta({
   middleware: 'teacher'
 })
 
+interface ClassForAttendance {
+  id: number
+  classroom_id: number
+  classroom_name: string
+  subject_name: string
+  grade_level_name: string
+  student_count: number
+}
+
+interface StudentWithAttendance {
+  id: number
+  admission_number: string
+  first_name: string
+  last_name: string
+  email?: string
+  phone?: string
+  photo?: string
+  status: string
+  grade_level_name?: string
+  attendance_status: string
+  remarks: string
+}
+
 const { fetchMyClasses, fetchClassStudents } = useClasses()
 const { markBulkAttendance } = useAttendance()
-const { showToast } = useToast()
+const { success, error: showError } = useToast()
 
-const myClasses = ref([])
-const students = ref([])
+const myClasses = ref<ClassForAttendance[]>([])
+const students = ref<StudentWithAttendance[]>([])
 const selectedClass = ref('')
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const loading = ref(false)
@@ -250,7 +273,10 @@ const loadAttendance = async () => {
 
   loading.value = true
   const classData = myClasses.value.find(c => c.id === parseInt(selectedClass.value))
-  if (!classData) return
+  if (!classData) {
+    loading.value = false
+    return
+  }
 
   // Extract classroom ID from the selected class
   const { data, error } = await fetchClassStudents(classData.classroom_id || classData.id)
@@ -262,7 +288,7 @@ const loadAttendance = async () => {
       remarks: ''
     }))
   } else if (error) {
-    showToast('Error loading students', error, 'error')
+    showError('Failed to load students', error)
   }
 
   loading.value = false
@@ -281,6 +307,12 @@ const saveAttendance = async () => {
 
   const classData = myClasses.value.find(c => c.id === parseInt(selectedClass.value))
 
+  if (!classData) {
+    showError('Class not found', 'Please select a valid class')
+    saving.value = false
+    return
+  }
+
   const attendanceData = {
     classroom: classData.classroom_id || classData.id,
     date: selectedDate.value,
@@ -294,9 +326,9 @@ const saveAttendance = async () => {
   const { error } = await markBulkAttendance(attendanceData)
 
   if (!error) {
-    showToast('Success', 'Attendance saved successfully', 'success')
+    success('Attendance saved successfully')
   } else {
-    showToast('Error', 'Failed to save attendance: ' + error, 'error')
+    showError('Failed to save attendance', error)
   }
 
   saving.value = false
@@ -317,7 +349,8 @@ const getStatusBorderClass = (status: string) => {
   }
 }
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | undefined) => {
+  if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -328,6 +361,30 @@ const formatDate = (dateString: string) => {
 
 onMounted(async () => {
   const { data } = await fetchMyClasses()
-  if (data) myClasses.value = data
+  if (data) {
+    // Backend now returns separate arrays, combine them for attendance marking
+    const homeroom = (data as any).homeroom_classes || []
+    const teaching = (data as any).teaching_assignments || []
+
+    // Combine both arrays - homeroom classes and teaching assignments
+    myClasses.value = [
+      ...homeroom.map((cls: any) => ({
+        id: cls.classroom_id,
+        classroom_id: cls.classroom_id,
+        classroom_name: cls.classroom_name,
+        subject_name: 'Homeroom',
+        grade_level_name: cls.grade_level_name,
+        student_count: cls.student_count
+      })),
+      ...teaching.map((cls: any) => ({
+        id: cls.id,
+        classroom_id: cls.classroom_id,
+        classroom_name: cls.classroom_name,
+        subject_name: cls.subject_name,
+        grade_level_name: cls.grade_level_name,
+        student_count: cls.student_count
+      }))
+    ]
+  }
 })
 </script>

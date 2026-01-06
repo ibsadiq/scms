@@ -33,7 +33,6 @@ export const useDashboard = () => {
         acceptanceRevenue: response.acceptance_revenue || 0,
       }
     } catch (error) {
-      console.warn('Admission stats not available:', error)
       return null
     }
   }
@@ -55,11 +54,9 @@ export const useDashboard = () => {
       )
       return response
     } catch (error: any) {
-      console.warn('Admin dashboard endpoint not available, fetching from individual endpoints')
-      
       // Fallback: Fetch from individual endpoints
       try {
-        const [students, teachers, subjects, events, payments] = await Promise.all([
+        const [students, teachers, subjects, payments, attendanceData, performanceData, financialData] = await Promise.all([
           $fetch<any[]>(`${config.public.apiBase}/sis/students/`, {
             headers: { Authorization: `Bearer ${token.value}` }
           }).catch(() => []),
@@ -69,12 +66,18 @@ export const useDashboard = () => {
           $fetch<any[]>(`${config.public.apiBase}/academic/subjects/`, {
             headers: { Authorization: `Bearer ${token.value}` }
           }).catch(() => []),
-          $fetch<any[]>(`${config.public.apiBase}/administration/school-events/`, {
-            headers: { Authorization: `Bearer ${token.value}` }
-          }).catch(() => []),
           $fetch<any[]>(`${config.public.apiBase}/finance/payments/`, {
             headers: { Authorization: `Bearer ${token.value}` }
-          }).catch(() => [])
+          }).catch(() => []),
+          $fetch<any>(`${config.public.apiBase}/attendance/weekly-summary/`, {
+            headers: { Authorization: `Bearer ${token.value}` }
+          }).catch(() => null),
+          $fetch<any>(`${config.public.apiBase}/grades/performance-summary/`, {
+            headers: { Authorization: `Bearer ${token.value}` }
+          }).catch(() => null),
+          $fetch<any>(`${config.public.apiBase}/finance/dashboard-summary/`, {
+            headers: { Authorization: `Bearer ${token.value}` }
+          }).catch(() => null)
         ])
 
         // Calculate stats from fetched data
@@ -83,7 +86,6 @@ export const useDashboard = () => {
 
         // Filter active students (those without date_dismissed)
         const activeStudents = students.filter((s: any) => !s.date_dismissed).length
-        const totalStudents = students.length
         const totalTeachers = teachers.length
         const activeSubjects = subjects.length
         const newStudentsThisMonth = students.filter((s: any) => {
@@ -91,6 +93,9 @@ export const useDashboard = () => {
           const admissionDate = new Date(s.admission_date)
           return admissionDate >= firstDayOfMonth
         }).length
+
+        // Calculate attendance rate from backend data or default
+        const attendanceRate = attendanceData?.attendance_rate || attendanceData?.average_rate || 0
 
         // Group active students by class level
         const activeStudentsList = students.filter((s: any) => !s.date_dismissed)
@@ -135,53 +140,72 @@ export const useDashboard = () => {
         // Fetch admission stats
         const admissionStatsData = await fetchAdmissionStats()
 
+        // Parse weekly attendance data from backend
+        const weeklyAttendance = attendanceData?.weekly_data || attendanceData?.attendance || []
+        const formattedAttendance = weeklyAttendance.length > 0
+          ? weeklyAttendance.map((record: any) => ({
+              dayName: record.day_name || record.dayName || new Date(record.date).toLocaleDateString('en-US', { weekday: 'long' }),
+              date: record.date,
+              rate: Math.round(record.attendance_rate || record.rate || 0),
+              present: record.present_count || record.present || 0,
+              total: record.total_count || record.total || activeStudents
+            }))
+          : []
+
+        // Parse financial data from backend
+        const financialSummary = financialData || {}
+        const collected = financialSummary.total_collected || financialSummary.collected || 0
+        const outstanding = financialSummary.total_outstanding || financialSummary.outstanding || 0
+        const totalExpected = collected + outstanding
+        const collectionRate = totalExpected > 0 ? Math.round((collected / totalExpected) * 100) : 0
+
+        // Parse performance data from backend
+        const performanceSummary = performanceData || {}
+        const averageGrade = performanceSummary.average_grade || performanceSummary.averageGrade || 'N/A'
+        const passRate = Math.round(performanceSummary.pass_rate || performanceSummary.passRate || 0)
+        const gradeDistribution = performanceSummary.grade_distribution || performanceSummary.grades || {}
+
         return {
           stats: {
             totalStudents: activeStudents,
             totalTeachers: totalTeachers,
             activeSubjects: activeSubjects,
-            attendanceRate: 94, // Default - need actual attendance data
+            attendanceRate: attendanceRate,
             newStudentsThisMonth: newStudentsThisMonth
           },
           admissionStats: admissionStatsData || undefined,
           studentsByLevel: [
-            { 
-              name: 'Primary', 
-              count: primaryCount, 
-              percentage: Math.round((primaryCount / activeStudents) * 100) || 0, 
-              icon: 'lucide:baby' 
+            {
+              name: 'Primary',
+              count: primaryCount,
+              percentage: Math.round((primaryCount / activeStudents) * 100) || 0,
+              icon: 'lucide:baby'
             },
-            { 
-              name: 'JSS', 
-              count: jssCount, 
-              percentage: Math.round((jssCount / activeStudents) * 100) || 0, 
-              icon: 'lucide:book' 
+            {
+              name: 'JSS',
+              count: jssCount,
+              percentage: Math.round((jssCount / activeStudents) * 100) || 0,
+              icon: 'lucide:book'
             },
-            { 
-              name: 'SSS', 
-              count: sssCount, 
-              percentage: Math.round((sssCount / activeStudents) * 100) || 0, 
-              icon: 'lucide:graduation-cap' 
+            {
+              name: 'SSS',
+              count: sssCount,
+              percentage: Math.round((sssCount / activeStudents) * 100) || 0,
+              icon: 'lucide:graduation-cap'
             },
-            { 
-              name: 'University', 
-              count: universityCount, 
-              percentage: Math.round((universityCount / activeStudents) * 100) || 0, 
-              icon: 'lucide:school' 
+            {
+              name: 'University',
+              count: universityCount,
+              percentage: Math.round((universityCount / activeStudents) * 100) || 0,
+              icon: 'lucide:school'
             }
           ],
           financial: {
-            collected: 45780000,
-            outstanding: 8920000,
-            collectionRate: 84
+            collected: collected,
+            outstanding: outstanding,
+            collectionRate: collectionRate
           },
-          attendance: [
-            { dayName: 'Monday', date: '2024-01-15', rate: 96, present: 1197, total: activeStudents },
-            { dayName: 'Tuesday', date: '2024-01-16', rate: 94, present: 1172, total: activeStudents },
-            { dayName: 'Wednesday', date: '2024-01-17', rate: 95, present: 1185, total: activeStudents },
-            { dayName: 'Thursday', date: '2024-01-18', rate: 93, present: 1160, total: activeStudents },
-            { dayName: 'Friday', date: '2024-01-19', rate: 91, present: 1135, total: activeStudents }
-          ],
+          attendance: formattedAttendance,
           recentAdmissions: recentAdmissions,
           recentPayments: payments
             .sort((a: any, b: any) =>
@@ -198,92 +222,48 @@ export const useDashboard = () => {
               paid_on: p.paid_on || p.created_at || new Date().toISOString()
             })),
           performance: {
-            averageGrade: 'B+',
-            passRate: 87,
+            averageGrade: averageGrade,
+            passRate: passRate,
             grades: {
-              a: 28,
-              b: 35,
-              c: 24,
-              df: 13
+              a: Math.round(gradeDistribution.A || gradeDistribution.a || 0),
+              b: Math.round(gradeDistribution.B || gradeDistribution.b || 0),
+              c: Math.round(gradeDistribution.C || gradeDistribution.c || 0),
+              df: Math.round((gradeDistribution.D || gradeDistribution.d || 0) + (gradeDistribution.F || gradeDistribution.f || 0))
             }
           }
         }
       } catch (fallbackError) {
-        console.error('Error fetching from individual endpoints:', fallbackError)
-        
-        // Return mock data as last resort
+        // Return empty data structure if all endpoints fail
         return {
           stats: {
-            totalStudents: 1247,
-            totalTeachers: 87,
-            activeSubjects: 42,
-            attendanceRate: 94,
-            newStudentsThisMonth: 15
+            totalStudents: 0,
+            totalTeachers: 0,
+            activeSubjects: 0,
+            attendanceRate: 0,
+            newStudentsThisMonth: 0
           },
           studentsByLevel: [
-            { name: 'Primary', count: 456, percentage: 37, icon: 'lucide:baby' },
-            { name: 'JSS', count: 342, percentage: 27, icon: 'lucide:book' },
-            { name: 'SSS', count: 389, percentage: 31, icon: 'lucide:graduation-cap' },
-            { name: 'University', count: 60, percentage: 5, icon: 'lucide:school' }
+            { name: 'Primary', count: 0, percentage: 0, icon: 'lucide:baby' },
+            { name: 'JSS', count: 0, percentage: 0, icon: 'lucide:book' },
+            { name: 'SSS', count: 0, percentage: 0, icon: 'lucide:graduation-cap' },
+            { name: 'University', count: 0, percentage: 0, icon: 'lucide:school' }
           ],
           financial: {
-            collected: 45780000,
-            outstanding: 8920000,
-            collectionRate: 84
+            collected: 0,
+            outstanding: 0,
+            collectionRate: 0
           },
-          attendance: [
-            { dayName: 'Monday', date: '2024-01-15', rate: 96, present: 1197, total: 1247 },
-            { dayName: 'Tuesday', date: '2024-01-16', rate: 94, present: 1172, total: 1247 },
-            { dayName: 'Wednesday', date: '2024-01-17', rate: 95, present: 1185, total: 1247 },
-            { dayName: 'Thursday', date: '2024-01-18', rate: 93, present: 1160, total: 1247 },
-            { dayName: 'Friday', date: '2024-01-19', rate: 91, present: 1135, total: 1247 }
-          ],
-          recentAdmissions: [
-            {
-              id: 1,
-              first_name: 'Chioma',
-              last_name: 'Okafor',
-              grade_level: 'JSS 1',
-              admission_date: '2024-01-10'
-            },
-            {
-              id: 2,
-              first_name: 'Tunde',
-              last_name: 'Adeyemi',
-              grade_level: 'Primary 5',
-              admission_date: '2024-01-12'
-            },
-            {
-              id: 3,
-              first_name: 'Blessing',
-              last_name: 'Nwosu',
-              grade_level: 'SSS 2',
-              admission_date: '2024-01-14'
-            },
-            {
-              id: 4,
-              first_name: 'Ibrahim',
-              last_name: 'Mohammed',
-              grade_level: 'JSS 3',
-              admission_date: '2024-01-15'
-            },
-            {
-              id: 5,
-              first_name: 'Grace',
-              last_name: 'Eze',
-              grade_level: 'Primary 3',
-              admission_date: '2024-01-16'
-            }
-          ],
+          attendance: [],
+          recentAdmissions: [],
           recentPayments: [],
           performance: {
-            averageGrade: 'B+',
-            passRate: 87,
+            averageGrade: 'N/A',
+            passRate: 0,
             grades: {
-              a: 28,
-              b: 35,
-              c: 24,
-              df: 13
+              a: 0,
+              b: 0,
+              c: 0,
+              df: 0
             }
           }
         }

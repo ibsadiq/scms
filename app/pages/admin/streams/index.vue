@@ -166,7 +166,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
@@ -176,6 +177,8 @@ interface Stream {
   id: number
   name: string
 }
+
+const { success, error: showError } = useToast()
 
 const { apiCall } = useApi()
 
@@ -223,9 +226,9 @@ const deleteStream = async (stream: Stream) => {
 
   if (!apiError) {
     await loadStreams()
-    toast.success('Stream deleted successfully')
+    showSuccessToast('Stream deleted successfully')
   } else {
-    toast.error('Failed to delete stream', {
+    showError('Failed to delete stream', {
       description: apiError
     })
   }
@@ -246,12 +249,12 @@ const handleSubmit = async () => {
   })
 
   if (data) {
-    toast.success(`Stream ${editingStream.value ? 'updated' : 'created'} successfully`)
+    showSuccessToast(`Stream ${editingStream.value ? 'updated' : 'created'} successfully`)
     showCreateDialog.value = false
     cancelForm()
     loadStreams()
   } else {
-    toast.error(`Failed to ${editingStream.value ? 'update' : 'create'} stream`, {
+    showError(`Failed to ${editingStream.value ? 'update' : 'create'} stream`, {
       description: apiError || 'An unexpected error occurred. Please try again.'
     })
   }

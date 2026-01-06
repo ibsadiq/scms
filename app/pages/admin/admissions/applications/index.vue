@@ -261,12 +261,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionApplication, AdmissionSession, ApplicationStatus } from '~~/types/admission'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const { adminAPI } = useAdmissionAdmin()
@@ -312,7 +315,7 @@ const loadApplications = async () => {
     previousPage.value = result.previous || null
   } catch (error) {
     console.error('Error loading applications:', error)
-    toast.error('Failed to load applications')
+    showError('Failed to load applications')
     applications.value = []
   } finally {
     loading.value = false
@@ -331,7 +334,7 @@ const loadPage = async (url: string | null) => {
     previousPage.value = result.previous || null
   } catch (error) {
     console.error('Error loading page:', error)
-    toast.error('Failed to load page')
+    showError('Failed to load page')
     applications.value = []
   } finally {
     loading.value = false
@@ -377,10 +380,10 @@ const exportApplications = async () => {
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
 
-    toast.success('Applications exported successfully')
+    showSuccessToast('Applications exported successfully')
   } catch (error) {
     console.error('Error exporting applications:', error)
-    toast.error('Failed to export applications')
+    showError('Failed to export applications')
   } finally {
     isExporting.value = false
   }

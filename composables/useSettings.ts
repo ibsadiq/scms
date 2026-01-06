@@ -78,7 +78,6 @@ export const useSettings = () => {
     if (useCache) {
       const cached = getCachedSettings()
       if (cached) {
-        console.log('📦 [useSettings] Using cached settings')
         return { data: cached, error: null }
       }
     }
@@ -91,7 +90,6 @@ export const useSettings = () => {
 
       if (data) {
         cacheSettings(data)
-        console.log('✅ [useSettings] Fetched public settings:', data.school_name)
       }
 
       return { data, error: null }

@@ -6,14 +6,10 @@
         <Icon name="lucide:arrow-left" class="w-4 h-4" />
       </Button>
       <div class="flex-1">
-        <h1 class="text-3xl font-bold text-neutral-900">
-          {{ editMode ? 'Edit Classroom' : 'Classroom Details' }}
-        </h1>
-        <p class="text-neutral-600 mt-1">
-          {{ editMode ? 'Update classroom information' : 'View and manage classroom information' }}
-        </p>
+        <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Classroom Details</h1>
+        <p class="text-neutral-600 dark:text-neutral-400 mt-1">View and manage classroom information</p>
       </div>
-      <Button v-if="!editMode" @click="editMode = true">
+      <Button @click="showEditDialog = true">
         <Icon name="lucide:pencil" class="w-4 h-4 mr-2" />
         Edit
       </Button>
@@ -22,69 +18,6 @@
     <div v-if="loading" class="text-center py-12">
       <Icon name="lucide:loader-2" class="w-8 h-8 animate-spin mx-auto text-neutral-400" />
     </div>
-
-    <!-- Edit Mode -->
-    <Card v-else-if="editMode && classroom">
-      <CardHeader>
-        <CardTitle>Classroom Details</CardTitle>
-        <CardDescription>Modify the information for this classroom</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form @submit.prevent="handleSubmit" class="space-y-6">
-          <!-- Stream Selection -->
-          <div class="space-y-2">
-            <Label for="stream">Stream</Label>
-            <select
-              id="stream"
-              v-model.number="selectedStream"
-              class="flex h-10 w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
-            >
-              <option :value="null">No stream assigned</option>
-              <option v-for="stream in streams" :key="stream.id" :value="stream.id">
-                {{ stream.name }}
-              </option>
-            </select>
-            <p class="text-xs text-neutral-500">Optionally assign a stream (e.g., A, B, C)</p>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <Label for="capacity">Capacity *</Label>
-              <Input
-                id="capacity"
-                v-model.number="classroom.capacity"
-                type="number"
-                min="1"
-                required
-              />
-              <p class="text-xs text-neutral-500">Maximum number of students</p>
-            </div>
-
-            <div class="space-y-2">
-              <Label for="occupied_sits">Occupied Seats *</Label>
-              <Input
-                id="occupied_sits"
-                v-model.number="classroom.occupied_sits"
-                type="number"
-                min="0"
-                required
-              />
-              <p class="text-xs text-neutral-500">Currently occupied seats</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <Button type="submit" :disabled="saving">
-              <Icon v-if="saving" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
-              {{ saving ? 'Saving...' : 'Save Changes' }}
-            </Button>
-            <Button type="button" variant="outline" @click="cancelEdit">
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
 
     <!-- View Mode -->
     <div v-else-if="classroom" class="space-y-6">
@@ -95,7 +28,7 @@
             <div class="flex items-start justify-between">
               <div>
                 <div class="flex items-center gap-2">
-                  <CardTitle class="text-2xl">{{ classroom.name }}</CardTitle>
+                  <CardTitle class="text-2xl">{{ classroom.name_display || classroom.name }}</CardTitle>
                   <Badge v-if="classroom.stream_name" variant="outline" class="text-sm">
                     Stream {{ classroom.stream_name }}
                   </Badge>
@@ -131,7 +64,7 @@
                 <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
                   <Icon name="lucide:user" class="w-5 h-5 text-primary-700" />
                 </div>
-                <p class="font-semibold text-lg">{{ classroom.class_teacher }}</p>
+                <p class="font-semibold text-lg">{{ classroom.class_teacher_name }}</p>
               </div>
             </div>
 
@@ -166,7 +99,7 @@
             <Button
               variant="outline"
               class="w-full justify-start text-red-600 hover:text-red-700"
-              @click="handleDelete"
+              @click="showDeleteDialog = true"
             >
               <Icon name="lucide:trash-2" class="w-4 h-4 mr-2" />
               Delete Classroom
@@ -200,7 +133,7 @@
       <Card>
         <CardHeader>
           <CardTitle>Students in This Classroom</CardTitle>
-          <CardDescription>List of all students enrolled in {{ classroom.name }}</CardDescription>
+          <CardDescription>List of all students enrolled in {{ classroom.name_display || classroom.name }}</CardDescription>
         </CardHeader>
         <CardContent class="p-0">
           <!-- Loading Students -->
@@ -272,6 +205,107 @@
         </CardContent>
       </Card>
     </div>
+
+    <!-- Edit Dialog -->
+    <Dialog v-model:open="showEditDialog">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Classroom</DialogTitle>
+          <DialogDescription>Update classroom information</DialogDescription>
+        </DialogHeader>
+
+        <form @submit.prevent="handleSubmit" class="space-y-4">
+          <!-- Class Teacher Selection -->
+          <div class="space-y-2">
+            <Label for="edit_class_teacher">Class Teacher *</Label>
+            <select
+              id="edit_class_teacher"
+              v-model.number="editForm.class_teacher"
+              class="flex h-10 w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
+              required
+            >
+              <option :value="null" disabled>Select a class teacher</option>
+              <option v-for="teacher in teachers" :key="teacher.id" :value="teacher.id">
+                {{ teacher.first_name }} {{ teacher.last_name }}
+              </option>
+            </select>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Select the teacher who will manage this classroom</p>
+          </div>
+
+          <!-- Stream Selection -->
+          <div class="space-y-2">
+            <Label for="edit_stream">Stream</Label>
+            <select
+              id="edit_stream"
+              v-model.number="editForm.stream"
+              class="flex h-10 w-full rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
+            >
+              <option :value="null">No stream assigned</option>
+              <option v-for="stream in streams" :key="stream.id" :value="stream.id">
+                {{ stream.name }}
+              </option>
+            </select>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Optionally assign a stream (e.g., A, B, C)</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="edit_capacity">Capacity *</Label>
+              <Input
+                id="edit_capacity"
+                v-model.number="editForm.capacity"
+                type="number"
+                min="1"
+                required
+              />
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Maximum number of students</p>
+            </div>
+
+            <div class="space-y-2">
+              <Label for="edit_occupied_sits">Occupied Seats *</Label>
+              <Input
+                id="edit_occupied_sits"
+                v-model.number="editForm.occupied_sits"
+                type="number"
+                min="0"
+                required
+              />
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Currently occupied seats</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showEditDialog = false">Cancel</Button>
+            <Button type="submit" :disabled="saving">
+              <Icon v-if="saving" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog v-model:open="showDeleteDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete the classroom "{{ classroom?.name_display || classroom?.name }}".
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            @click="confirmDelete"
+            class="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 
@@ -281,8 +315,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useApi } from '~~/composables/useApi'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: 'admin',
@@ -294,17 +330,24 @@ interface Classroom {
   name: string
   stream_name?: string | null
   stream_id?: number | null
-  class_teacher: string | null
+  class_teacher: number | null
   class_teacher_name?: string
   capacity: number
   occupied_sits: number
   available_sits: number
   class_status: string
+  name_display: string | null
 }
 
 interface Stream {
   id: number
   name: string
+}
+
+interface Teacher {
+  id: number
+  first_name: string
+  last_name: string
 }
 
 interface StudentEnrollment {
@@ -320,16 +363,36 @@ interface StudentEnrollment {
 const route = useRoute()
 const router = useRouter()
 const { apiCall } = useApi()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const loading = ref(true)
 const saving = ref(false)
-const editMode = ref(false)
+const showEditDialog = ref(false)
+const showDeleteDialog = ref(false)
 const classroom = ref<Classroom | null>(null)
-const originalData = ref<Classroom | null>(null)
 const streams = ref<Stream[]>([])
-const selectedStream = ref<number | null>(null)
+const teachers = ref<Teacher[]>([])
 const loadingStudents = ref(true)
 const students = ref<StudentEnrollment[]>([])
+
+const editForm = ref({
+  class_teacher: null as number | null,
+  stream: null as number | null,
+  capacity: 40,
+  occupied_sits: 0
+})
+
+// Watch for edit dialog open and initialize form
+watch(showEditDialog, (newValue) => {
+  if (newValue && classroom.value) {
+    editForm.value = {
+      class_teacher: typeof classroom.value.class_teacher === 'number' ? classroom.value.class_teacher : null,
+      stream: classroom.value.stream_id || null,
+      capacity: classroom.value.capacity,
+      occupied_sits: classroom.value.occupied_sits
+    }
+  }
+})
 
 const occupancyPercentage = computed(() => {
   if (!classroom.value) return 0
@@ -352,19 +415,22 @@ const getOccupancyColor = () => {
 const loadData = async () => {
   const id = parseInt(route.params.id as string)
 
-  const [classroomRes, streamsRes] = await Promise.all([
+  const [classroomRes, streamsRes, teachersRes] = await Promise.all([
     apiCall<Classroom>(`/academic/classrooms/${id}/`),
-    apiCall<Stream[]>('/academic/streams/')
+    apiCall<Stream[]>('/academic/streams/'),
+    apiCall<Teacher[]>('/users/teachers/')
   ])
 
   if (classroomRes.data) {
     classroom.value = classroomRes.data
-    originalData.value = { ...classroomRes.data }
-    selectedStream.value = classroomRes.data.stream_id || null
   }
 
   if (streamsRes.data) {
     streams.value = streamsRes.data
+  }
+
+  if (teachersRes.data) {
+    teachers.value = teachersRes.data
   }
 
   loading.value = false
@@ -389,6 +455,11 @@ const loadStudents = async () => {
 const handleSubmit = async () => {
   if (!classroom.value) return
 
+  if (!editForm.value.class_teacher) {
+    showErrorToast('Please select a class teacher', 'Validation Error')
+    return
+  }
+
   saving.value = true
 
   const id = parseInt(route.params.id as string)
@@ -397,49 +468,39 @@ const handleSubmit = async () => {
     {
       method: 'PATCH',
       body: {
-        stream: selectedStream.value,
-        capacity: classroom.value.capacity,
-        occupied_sits: classroom.value.occupied_sits
+        class_teacher: editForm.value.class_teacher,
+        stream: editForm.value.stream,
+        capacity: Number(editForm.value.capacity) || 40,
+        occupied_sits: Number(editForm.value.occupied_sits) || 0
       }
     }
   )
 
   if (data) {
     classroom.value = data
-    originalData.value = { ...data }
-    selectedStream.value = data.stream_id || null
-    toast.success('Classroom updated successfully')
-    setTimeout(() => {
-      editMode.value = false
-    }, 1500)
+    showSuccessToast('Classroom updated successfully')
+    showEditDialog.value = false
   } else {
-    toast.error('Failed to update classroom', { description: apiError || 'An unexpected error occurred. Please try again.' })
+    showErrorToast(apiError, 'Failed to update classroom')
   }
 
   saving.value = false
 }
 
-const cancelEdit = () => {
-  if (originalData.value) {
-    classroom.value = { ...originalData.value }
-    selectedStream.value = originalData.value.stream_id || null
-  }
-  editMode.value = false
-}
-
-const handleDelete = async () => {
+const confirmDelete = async () => {
   if (!classroom.value) return
-  if (!confirm(`Are you sure you want to delete "${classroom.value.name}"?`)) return
 
   const { error } = await apiCall(`/academic/classrooms/${classroom.value.id}/`, {
     method: 'DELETE'
   })
 
   if (!error) {
-    toast.success('Classroom deleted successfully')
+    showSuccessToast('Classroom deleted successfully')
+    showDeleteDialog.value = false
     router.push('/admin/classrooms')
   } else {
-    toast.error('Failed to delete classroom', { description: error || 'An unexpected error occurred. Please try again.' })
+    showErrorToast(error, 'Failed to delete classroom')
+    showDeleteDialog.value = false
   }
 }
 

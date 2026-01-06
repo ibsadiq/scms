@@ -2,9 +2,15 @@
 <template>
   <div class="space-y-4 sm:space-y-6">
     <!-- Header -->
-    <div>
-      <h1 class="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100">My Classes</h1>
-      <p class="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 mt-1">View your homeroom and teaching assignments</p>
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100">My Classes</h1>
+        <p class="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 mt-1">View your homeroom and teaching assignments</p>
+      </div>
+      <Button variant="outline" size="sm" @click="loadClasses" :disabled="loading">
+        <Icon name="lucide:refresh-cw" class="w-4 h-4 mr-2" :class="{ 'animate-spin': loading }" />
+        Refresh
+      </Button>
     </div>
 
     <!-- Loading State -->
@@ -14,7 +20,7 @@
     </div>
 
     <!-- Empty State -->
-    <Card v-else-if="homeroomClass === null && teachingClasses.length === 0">
+    <Card v-else-if="homeroomClasses.length === 0 && teachingAssignments.length === 0">
       <CardContent class="p-12 text-center">
         <Icon name="lucide:book-open" class="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
         <p class="text-neutral-500 dark:text-neutral-400">No classes assigned yet</p>
@@ -22,170 +28,200 @@
       </CardContent>
     </Card>
 
-    <!-- Homeroom Class Section -->
-    <div v-else>
-      <div v-if="homeroomClass" class="space-y-4">
+    <!-- Classes Tables -->
+    <div v-else class="space-y-6">
+      <!-- Homeroom Classes Table -->
+      <div class="space-y-4">
         <div class="flex items-center gap-2">
           <Icon name="lucide:home" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
-          <h2 class="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-neutral-100">Homeroom Class</h2>
-          <Badge variant="default" class="ml-2">Class Teacher</Badge>
+          <h2 class="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-neutral-100">Homeroom Classes</h2>
+          <Badge variant="default" class="ml-2">{{ homeroomClasses.length }}</Badge>
         </div>
 
-        <Card
-          class="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary-500 bg-primary-50/50 dark:bg-primary-900/10"
-          @click="navigateToClass(homeroomClass)"
-        >
-          <CardHeader class="p-4 sm:p-5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <CardTitle class="text-base sm:text-lg truncate">{{ homeroomClass.classroom_name }}</CardTitle>
-                </div>
-                <CardDescription class="text-sm truncate mt-1">
-                  <Icon name="lucide:shield-check" class="w-3 h-3 inline mr-1" />
-                  Homeroom Teacher
-                </CardDescription>
-              </div>
-              <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
-                <Icon name="lucide:home" class="w-5 h-5 text-primary-700 dark:text-primary-400" />
-              </div>
+        <Card>
+          <CardContent class="p-0">
+            <!-- Empty State for Homeroom Classes -->
+            <div v-if="homeroomClasses.length === 0" class="p-12 text-center">
+              <Icon name="lucide:home-x" class="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+              <p class="text-neutral-500 dark:text-neutral-400 font-medium">No homeroom class assigned yet</p>
+              <p class="text-sm text-neutral-400 dark:text-neutral-500 mt-1">Contact your administrator to be assigned as a homeroom teacher</p>
             </div>
-          </CardHeader>
 
-          <CardContent class="p-4 sm:p-5 pt-0">
-            <div class="space-y-3">
-              <!-- Grade Level -->
-              <div class="flex items-center gap-2 text-sm">
-                <Icon name="lucide:layers" class="w-4 h-4 text-neutral-400" />
-                <span class="text-neutral-600 dark:text-neutral-400">{{ homeroomClass.grade_level_name }}</span>
-              </div>
-
-              <!-- Student Count -->
-              <div class="flex items-center gap-2 text-sm">
-                <Icon name="lucide:users" class="w-4 h-4 text-neutral-400" />
-                <span class="text-neutral-600 dark:text-neutral-400">
-                  {{ homeroomClass.student_count || 0 }} Students
-                </span>
-              </div>
-
-              <!-- Actions -->
-              <div class="grid grid-cols-2 gap-2 pt-3">
-                <Button
-                  size="sm"
-                  variant="default"
-                  @click.stop="navigateTo(`/teacher/attendance?class=${homeroomClass.classroom_id}`)"
-                  class="w-full text-xs"
-                >
-                  <Icon name="lucide:check-square" class="w-3 h-3 mr-1" />
-                  Attendance
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  @click.stop="navigateTo(`/teacher/classes/${homeroomClass.classroom_id}`)"
-                  class="w-full text-xs"
-                >
-                  <Icon name="lucide:eye" class="w-3 h-3 mr-1" />
-                  View Class
-                </Button>
-              </div>
+            <!-- Table with Data -->
+            <div v-else class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Classroom</th>
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Grade Level</th>
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Students</th>
+                    <th class="text-right p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="classroom in homeroomClasses"
+                    :key="classroom.id"
+                    class="border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-colors"
+                  >
+                    <td class="p-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
+                          <Icon name="lucide:home" class="w-5 h-5 text-primary-700 dark:text-primary-400" />
+                        </div>
+                        <div>
+                          <p class="font-medium text-neutral-900 dark:text-neutral-100">{{ classroom.classroom_name }}</p>
+                          <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                            <Icon name="lucide:shield-check" class="w-3 h-3 inline mr-1" />
+                            Homeroom Teacher
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ classroom.grade_level_name }}</span>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center gap-2">
+                        <Icon name="lucide:users" class="w-4 h-4 text-neutral-400" />
+                        <span class="text-sm text-neutral-900 dark:text-neutral-100 font-medium">{{ classroom.student_count || 0 }}</span>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          @click="navigateTo(`/teacher/attendance?class=${classroom.classroom_id}`)"
+                        >
+                          <Icon name="lucide:check-square" class="w-4 h-4 mr-1" />
+                          Attendance
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          @click="navigateTo(`/teacher/classes/${classroom.classroom_id}`)"
+                        >
+                          <Icon name="lucide:eye" class="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <!-- Teaching Classes Section -->
-      <div v-if="teachingClasses.length > 0" class="space-y-4 mt-8">
+      <!-- Teaching Assignments Table -->
+      <div class="space-y-4">
         <div class="flex items-center gap-2">
           <Icon name="lucide:book-open" class="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-          <h2 class="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-neutral-100">Teaching Classes</h2>
-          <Badge variant="secondary" class="ml-2">{{ teachingClasses.length }} {{ teachingClasses.length === 1 ? 'Class' : 'Classes' }}</Badge>
+          <h2 class="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-neutral-100">Teaching Assignments</h2>
+          <Badge variant="secondary" class="ml-2">{{ teachingAssignments.length }}</Badge>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card
-            v-for="classItem in teachingClasses"
-            :key="classItem.id"
-            class="hover:shadow-lg transition-all cursor-pointer border-l-4"
-            :class="getClassBorderColor(classItem.grade_level_name)"
-            @click="navigateToClass(classItem)"
-          >
-        <CardHeader class="p-4 sm:p-5">
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex-1 min-w-0">
-              <CardTitle class="text-base sm:text-lg truncate">{{ classItem.classroom_name }}</CardTitle>
-              <CardDescription class="text-sm truncate mt-1">{{ classItem.subject_name }}</CardDescription>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
-              <Icon name="lucide:graduation-cap" class="w-5 h-5 text-primary-700 dark:text-primary-400" />
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent class="p-4 sm:p-5 pt-0">
-          <div class="space-y-3">
-            <!-- Grade Level -->
-            <div class="flex items-center gap-2 text-sm">
-              <Icon name="lucide:layers" class="w-4 h-4 text-neutral-400" />
-              <span class="text-neutral-600 dark:text-neutral-400">{{ classItem.grade_level_name }}</span>
+        <Card>
+          <CardContent class="p-0">
+            <!-- Empty State for Teaching Assignments -->
+            <div v-if="teachingAssignments.length === 0" class="p-12 text-center">
+              <Icon name="lucide:book-x" class="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+              <p class="text-neutral-500 dark:text-neutral-400 font-medium">No subjects allocated yet</p>
+              <p class="text-sm text-neutral-400 dark:text-neutral-500 mt-1">Contact your administrator to allocate subjects</p>
             </div>
 
-            <!-- Student Count -->
-            <div class="flex items-center gap-2 text-sm">
-              <Icon name="lucide:users" class="w-4 h-4 text-neutral-400" />
-              <span class="text-neutral-600 dark:text-neutral-400">
-                {{ classItem.student_count || 0 }} Students
-              </span>
+            <!-- Table with Data -->
+            <div v-else class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Classroom</th>
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Subject</th>
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Grade Level</th>
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Students</th>
+                    <th class="text-left p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Role</th>
+                    <th class="text-right p-4 font-semibold text-sm text-neutral-700 dark:text-neutral-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="assignment in teachingAssignments"
+                    :key="assignment.id"
+                    class="border-b border-neutral-200 dark:border-neutral-700 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    <td class="p-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                          <Icon name="lucide:graduation-cap" class="w-5 h-5 text-blue-700 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p class="font-medium text-neutral-900 dark:text-neutral-100">{{ assignment.classroom_name }}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <Badge variant="secondary">{{ assignment.subject_name }}</Badge>
+                    </td>
+                    <td class="p-4">
+                      <span class="text-sm text-neutral-600 dark:text-neutral-400">{{ assignment.grade_level_name }}</span>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center gap-2">
+                        <Icon name="lucide:users" class="w-4 h-4 text-neutral-400" />
+                        <span class="text-sm text-neutral-900 dark:text-neutral-100 font-medium">{{ assignment.student_count || 0 }}</span>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <Badge v-if="assignment.is_class_teacher" variant="default" class="bg-primary-600">
+                        <Icon name="lucide:shield-check" class="w-3 h-3 mr-1" />
+                        Also Homeroom
+                      </Badge>
+                      <Badge v-else variant="outline">
+                        <Icon name="lucide:book-open" class="w-3 h-3 mr-1" />
+                        Subject Teacher
+                      </Badge>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          @click="navigateTo(`/teacher/attendance?class=${assignment.id}`)"
+                        >
+                          <Icon name="lucide:check-square" class="w-4 h-4 mr-1" />
+                          Attendance
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          @click="navigateTo(`/teacher/grades?class=${assignment.id}`)"
+                        >
+                          <Icon name="lucide:award" class="w-4 h-4 mr-1" />
+                          Grades
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          @click="navigateTo(`/teacher/classes/${assignment.classroom_id}`)"
+                        >
+                          <Icon name="lucide:eye" class="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-
-            <!-- Schedule (if available) -->
-            <div v-if="classItem.schedule && classItem.schedule.length > 0" class="pt-2 border-t border-neutral-200 dark:border-neutral-700">
-              <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">Schedule</p>
-              <div class="space-y-1">
-                <div
-                  v-for="(schedule, idx) in classItem.schedule.slice(0, 2)"
-                  :key="idx"
-                  class="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400"
-                >
-                  <Icon name="lucide:clock" class="w-3 h-3" />
-                  <span>{{ schedule.day }}: {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}</span>
-                </div>
-                <p v-if="classItem.schedule.length > 2" class="text-xs text-neutral-400 dark:text-neutral-500 pl-5">
-                  +{{ classItem.schedule.length - 2 }} more
-                </p>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="grid grid-cols-2 gap-2 pt-3">
-              <Button
-                size="sm"
-                variant="outline"
-                @click.stop="navigateTo(`/teacher/attendance?class=${classItem.id}`)"
-                class="w-full text-xs"
-              >
-                <Icon name="lucide:check-square" class="w-3 h-3 mr-1" />
-                Attendance
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                @click.stop="navigateTo(`/teacher/grades?class=${classItem.id}`)"
-                class="w-full text-xs"
-              >
-                <Icon name="lucide:award" class="w-3 h-3 mr-1" />
-                Grades
-              </Button>
-            </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
 
     <!-- Quick Actions -->
-    <Card v-if="!loading && (homeroomClass !== null || teachingClasses.length > 0)">
+    <Card v-if="!loading && (homeroomClasses.length > 0 || teachingAssignments.length > 0)">
       <CardHeader class="p-4 sm:p-6">
         <CardTitle class="text-lg sm:text-xl">Quick Actions</CardTitle>
       </CardHeader>
@@ -214,65 +250,55 @@
 </template>
 
 <script setup lang="ts">
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useClasses, type TeacherClass } from '~~/composables/teacher/useClasses'
+import { useClasses } from '~~/composables/teacher/useClasses'
 
 definePageMeta({
   layout: 'teacher',
   middleware: 'teacher'
 })
 
+interface HomeroomClass {
+  id: string
+  classroom_id: number
+  classroom_name: string
+  grade_level_name: string
+  student_count: number
+}
+
+interface TeachingAssignment {
+  id: number
+  classroom_id: number
+  classroom_name: string
+  subject_name: string
+  grade_level_name: string
+  student_count: number
+  is_class_teacher: boolean
+  schedule: any[]
+}
+
 const { fetchMyClasses } = useClasses()
 
-const myClasses = ref<TeacherClass[]>([])
-const homeroomClass = ref<TeacherClass | null>(null)
-const teachingClasses = ref<TeacherClass[]>([])
+const homeroomClasses = ref<HomeroomClass[]>([])
+const teachingAssignments = ref<TeachingAssignment[]>([])
 const loading = ref(true)
 
-const getClassBorderColor = (gradeLevel: string) => {
-  const colors = [
-    'border-l-blue-500',
-    'border-l-green-500',
-    'border-l-purple-500',
-    'border-l-orange-500',
-    'border-l-pink-500',
-    'border-l-teal-500',
-  ]
-  const hash = gradeLevel?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0
-  return colors[hash % colors.length]
-}
-
-const formatTime = (time: string) => {
-  if (!time) return ''
-  return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
-}
-
-const navigateToClass = (classItem: TeacherClass) => {
-  // Navigate to class detail page (you can customize this)
-  navigateTo(`/teacher/classes/${classItem.id}`)
-}
-
-onMounted(async () => {
+const loadClasses = async () => {
   loading.value = true
   const { data } = await fetchMyClasses()
 
   if (data) {
-    myClasses.value = data
-
-    // Separate homeroom class from teaching classes
-    const homeroom = data.find(c => c.is_class_teacher === true)
-    homeroomClass.value = homeroom || null
-
-    // Teaching classes are all classes (homeroom teacher also teaches their homeroom)
-    teachingClasses.value = data
+    // Backend now returns separate arrays
+    homeroomClasses.value = (data as any).homeroom_classes || []
+    teachingAssignments.value = (data as any).teaching_assignments || []
   }
 
   loading.value = false
+}
+
+onMounted(() => {
+  loadClasses()
 })
 </script>

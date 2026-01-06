@@ -14,9 +14,7 @@
     </div>
     <div class="flex items-center gap-4">
       <!-- Notifications -->
-      <Button variant="ghost" size="icon">
-        <Icon name="lucide:bell" class="w-5 h-5" />
-      </Button>
+      <NotificationDropdown view-all-link="/student/notifications" />
 
       <!-- Theme Toggle -->
       <ThemeToggle />
@@ -127,7 +125,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import { useStudentAuth } from '~~/composables/useStudentAuth'
 import { useBrand } from '~~/composables/useBrand'
 
@@ -137,18 +135,9 @@ defineProps<{
 
 const { studentData, logout, changePassword } = useStudentAuth()
 const { school, product, schoolLogo } = useBrand()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const displayName = computed(() => school() || product())
-
-const formattedDate = computed(() => {
-  const today = new Date()
-  return today.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-})
 
 // Compute student full name
 const studentName = computed(() => {
@@ -174,7 +163,7 @@ const passwordForm = ref({
 
 const handleChangePassword = async () => {
   if (passwordForm.value.new_password !== passwordForm.value.new_password_confirm) {
-    toast.error('Passwords do not match')
+    showErrorToast({ data: { detail: 'Passwords do not match' } }, 'Password Error')
     return
   }
 
@@ -185,7 +174,7 @@ const handleChangePassword = async () => {
   isChangingPassword.value = false
 
   if (result.success) {
-    toast.success(result.message || 'Password changed successfully!')
+    showSuccessToast(result.message || 'Password changed successfully!')
     showChangePassword.value = false
     passwordForm.value = {
       old_password: '',
@@ -193,7 +182,7 @@ const handleChangePassword = async () => {
       new_password_confirm: ''
     }
   } else {
-    toast.error(result.error || 'Failed to change password')
+    showErrorToast({ data: { detail: result.error || 'Failed to change password' } }, 'Password Error')
   }
 }
 

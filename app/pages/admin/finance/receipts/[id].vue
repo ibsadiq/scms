@@ -495,11 +495,14 @@ import { useReceipts, type Receipt, type FeeAllocation } from '~~/composables/ad
 import { useFinance } from '~~/composables/admin/useFinance'
 import { useSettings, type SchoolSettings } from '~~/composables/useSettings'
 import type { StudentFeeBalance } from '~~/types'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const receiptId = computed(() => parseInt(route.params.id as string))
@@ -541,7 +544,7 @@ const loadReceipt = async () => {
     receipt.value = response.data
   } else if (response.error) {
     error.value = response.error
-    toast.error('Failed to load receipt', { description: response.error })
+    showErrorToast(response.error , 'Failed to load receipt')
   }
 }
 
@@ -586,7 +589,7 @@ const downloadReceipt = () => {
 
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
-    toast.error('Please allow popups to download receipt')
+    showError('Please allow popups to download receipt')
     return
   }
 
@@ -963,18 +966,18 @@ const handleEditReceipt = async () => {
   editingReceipt.value = false
 
   if (response.data) {
-    toast.success('Receipt updated successfully')
+    showSuccessToast('Receipt updated successfully')
     showEditDialog.value = false
     await loadReceipt()
   } else if (response.error) {
-    toast.error('Failed to update receipt', { description: response.error })
+    showErrorToast(response.error , 'Failed to update receipt')
   }
 }
 
 // Allocate fees
 const allocateFees = async () => {
   if (!receipt.value?.student) {
-    toast.error('Cannot allocate fees', { description: 'No student associated with this receipt' })
+    showErrorToast('No student associated with this receipt' , 'Cannot allocate fees')
     return
   }
 
@@ -986,7 +989,7 @@ const allocateFees = async () => {
     allocations.value = {}
     showAllocateDialog.value = true
   } else if (response.error) {
-    toast.error('Failed to load student fees', { description: response.error })
+    showErrorToast(response.error , 'Failed to load student fees')
   }
 }
 
@@ -1002,14 +1005,14 @@ const handleAllocateToFees = async () => {
     }))
 
   if (allocationArray.length === 0) {
-    toast.error('Please allocate amount to at least one fee')
+    showError('Please allocate amount to at least one fee')
     return
   }
 
   // Validate total allocation doesn't exceed unallocated amount
   const totalAllocated = allocationArray.reduce((sum, a) => sum + a.amount, 0)
   if (totalAllocated > (receipt.value.unallocated_amount || 0)) {
-    toast.error('Total allocation exceeds unallocated amount')
+    showError('Total allocation exceeds unallocated amount')
     return
   }
 
@@ -1018,11 +1021,11 @@ const handleAllocateToFees = async () => {
   allocatingFees.value = false
 
   if (response.data) {
-    toast.success('Fees allocated successfully')
+    showSuccessToast('Fees allocated successfully')
     showAllocateDialog.value = false
     await loadReceipt()
   } else if (response.error) {
-    toast.error('Failed to allocate fees', { description: response.error })
+    showErrorToast(response.error , 'Failed to allocate fees')
   }
 }
 
@@ -1047,11 +1050,11 @@ const handleCancelReceipt = async () => {
   cancellingReceipt.value = false
 
   if (response.data) {
-    toast.success('Receipt cancelled successfully')
+    showSuccessToast('Receipt cancelled successfully')
     showCancelDialog.value = false
     await loadReceipt()
   } else if (response.error) {
-    toast.error('Failed to cancel receipt', { description: response.error })
+    showErrorToast(response.error , 'Failed to cancel receipt')
   }
 }
 

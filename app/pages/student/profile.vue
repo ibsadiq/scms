@@ -231,12 +231,15 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useStudentProfile } from '~~/composables/student/useProfile'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   middleware: 'student',
   layout: 'student'
 })
+
+const { success, error: showError } = useToast()
 
 const { profile, loading, error, fetchProfile, updateProfile } = useStudentProfile()
 
@@ -299,10 +302,10 @@ const saveProfile = async () => {
   const result = await updateProfile(editForm.value)
 
   if (result.success) {
-    toast.success(result.message || 'Profile updated successfully')
+    showSuccessToast(result.message || 'Profile updated successfully')
     isEditing.value = false
   } else {
-    toast.error(result.error || 'Failed to update profile')
+    showError(result.error || 'Failed to update profile')
   }
 }
 

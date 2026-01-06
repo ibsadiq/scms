@@ -45,7 +45,7 @@
             type="button"
             class="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-neutral-300 uppercase tracking-wider hover:text-neutral-200 transition-colors"
           >
-            <span>People</span>
+            <span>Users</span>
             <Icon
               :name="openSections.people ? 'lucide:chevron-up' : 'lucide:chevron-down'"
               class="w-4 h-4"

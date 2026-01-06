@@ -43,7 +43,6 @@ export const useAttendance = () => {
   const markBulkAttendance = async (data: BulkAttendanceData) => {
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 600))
-      console.log('✅ Mock: Attendance saved successfully', data)
       return { data: { success: true, message: 'Attendance marked successfully' }, error: null }
     }
     return await apiCall('/attendance/student-attendance/bulk-mark/', {
@@ -56,7 +55,6 @@ export const useAttendance = () => {
   const updateAttendance = async (id: number, data: Partial<AttendanceRecord>) => {
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 400))
-      console.log('✅ Mock: Attendance updated', { id, data })
       return { data: { success: true }, error: null }
     }
     return await apiCall(`/attendance/student-attendance/${id}/`, {

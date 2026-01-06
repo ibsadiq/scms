@@ -187,7 +187,7 @@ import type { Term, AcademicYear } from '~~/types'
 import { useTerms } from '~~/composables/admin/useTerms'
 import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
 import { formatDate } from '~~/utils/helpers'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: 'admin',
@@ -196,6 +196,7 @@ definePageMeta({
 
 const { fetchTerms, createTerm, updateTerm, deleteTerm } = useTerms()
 const { fetchAcademicYears } = useAcademicYears()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -242,52 +243,63 @@ const handleSubmit = async () => {
 
   // Validate term dates are within academic year
   const selectedYear = academicYears.value.find(y => y.id === formData.value.academic_year)
-  if (selectedYear) {
-    const termStart = new Date(formData.value.start_date!)
-    const termEnd = new Date(formData.value.end_date!)
+  if (selectedYear && formData.value.start_date && formData.value.end_date) {
+    const termStart = new Date(formData.value.start_date)
+    const termEnd = new Date(formData.value.end_date)
     const yearStart = new Date(selectedYear.start_date)
-    const yearEnd = new Date(selectedYear.end_date)
 
-    if (termStart < yearStart || termEnd > yearEnd) {
-      const errorMessage = `Term dates must be within the academic year period (${formatDate(selectedYear.start_date)} - ${formatDate(selectedYear.end_date)})`
-      toast.error('Invalid dates', {
-        description: errorMessage
-      })
-      saving.value = false
-      return
+    // Only validate end date if the academic year has an end date
+    if (selectedYear.end_date) {
+      const yearEnd = new Date(selectedYear.end_date)
+
+      if (termStart < yearStart || termEnd > yearEnd) {
+        const errorMessage = `Term dates must be within the academic year period (${formatDate(selectedYear.start_date)} - ${formatDate(selectedYear.end_date)})`
+        showErrorToast({ data: { detail: errorMessage } }, 'Invalid dates')
+        saving.value = false
+        return
+      }
+    } else {
+      // If no end date, just validate start date
+      if (termStart < yearStart) {
+        const errorMessage = `Term start date must be after academic year start (${formatDate(selectedYear.start_date)})`
+        showErrorToast({ data: { detail: errorMessage } }, 'Invalid dates')
+        saving.value = false
+        return
+      }
     }
 
     if (termStart >= termEnd) {
-      toast.error('Invalid dates', {
-        description: 'Start date must be before end date'
-      })
+      showErrorToast({ data: { detail: 'Start date must be before end date' } }, 'Invalid dates')
       saving.value = false
       return
     }
   }
 
+  const payload = {
+    ...formData.value,
+    // Convert empty date strings to null
+    start_date: formData.value.start_date || null,
+    end_date: formData.value.end_date || null
+  }
+
   if (editingTerm.value) {
-    const { data, error: apiError } = await updateTerm(editingTerm.value.id!, formData.value as Term)
+    const { data, error: apiError } = await updateTerm(editingTerm.value.id!, payload as Term)
     if (data) {
       const index = terms.value.findIndex(t => t.id === editingTerm.value!.id)
       if (index !== -1) terms.value[index] = data
-      toast.success('Term updated successfully')
+      showSuccessToast('Term updated successfully')
       closeDialog()
     } else {
-      toast.error('Failed to update term', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showErrorToast(apiError, 'Failed to update term')
     }
   } else {
-    const { data, error: apiError } = await createTerm(formData.value as Term)
+    const { data, error: apiError } = await createTerm(payload as Term)
     if (data) {
       terms.value.push(data)
-      toast.success('Term created successfully')
+      showSuccessToast('Term created successfully')
       closeDialog()
     } else {
-      toast.error('Failed to create term', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showErrorToast(apiError, 'Failed to create term')
     }
   }
 
@@ -300,11 +312,9 @@ const handleDelete = async (term: Term) => {
   const { error: apiError } = await deleteTerm(term.id!)
   if (!apiError) {
     terms.value = terms.value.filter(t => t.id !== term.id)
-    toast.success('Term deleted successfully')
+    showSuccessToast('Term deleted successfully')
   } else {
-    toast.error('Failed to delete term', {
-      description: apiError
-    })
+    showErrorToast(apiError, 'Failed to delete term')
   }
 }
 

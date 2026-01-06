@@ -220,11 +220,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useInvitations, type Invitation } from '~~/composables/admin/useInvitations'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const { fetchInvitations, resendInvitation, deleteInvitation } = useInvitations()
 
@@ -274,9 +277,9 @@ const handleResend = async (invitation: Invitation) => {
 
   const { error } = await resendInvitation(invitation.id)
   if (!error) {
-    toast.success('Invitation resent successfully')
+    showSuccessToast('Invitation resent successfully')
   } else {
-    toast.error('Failed to resend invitation: ' + error)
+    showError('Failed to resend invitation: ' + error)
   }
 }
 
@@ -286,9 +289,9 @@ const handleCopyLink = async (invitation: Invitation) => {
 
   try {
     await navigator.clipboard.writeText(invitationLink)
-    toast.success('Invitation link copied to clipboard')
+    showSuccessToast('Invitation link copied to clipboard')
   } catch (err) {
-    toast.error('Failed to copy link')
+    showError('Failed to copy link')
   }
 }
 
@@ -298,9 +301,9 @@ const handleDelete = async (invitation: Invitation) => {
   const { error } = await deleteInvitation(invitation.id)
   if (!error) {
     invitations.value = invitations.value.filter(inv => inv.id !== invitation.id)
-    toast.success('Invitation deleted successfully')
+    showSuccessToast('Invitation deleted successfully')
   } else {
-    toast.error('Failed to delete invitation: ' + error)
+    showError('Failed to delete invitation: ' + error)
   }
 }
 

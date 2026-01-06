@@ -11,7 +11,7 @@
           <Icon name="lucide:upload" class="w-4 h-4 mr-2" />
           Bulk Upload
         </Button>
-        <Button @click="navigateTo('/admin/events/create')">
+        <Button @click="showCreateDialog = true">
           <Icon name="lucide:plus" class="w-4 h-4 mr-2" />
           New Event
         </Button>
@@ -54,7 +54,7 @@
         <div v-else-if="filteredEvents.length === 0" class="text-center py-12">
           <Icon name="lucide:calendar-x" class="w-12 h-12 mx-auto text-neutral-300 mb-3" />
           <p class="text-neutral-500">No events found</p>
-          <Button @click="navigateTo('/admin/events/create')" variant="outline" class="mt-4">
+          <Button @click="showCreateDialog = true" variant="outline" class="mt-4">
             Create Your First Event
           </Button>
         </div>
@@ -155,6 +155,103 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Create Event Dialog -->
+    <Dialog v-model:open="showCreateDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create School Event</DialogTitle>
+          <DialogDescription>Schedule a new event</DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleCreateSubmit" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="create-name">Event Name *</Label>
+              <Input
+                id="create-name"
+                v-model="createFormData.name"
+                placeholder="e.g., Mid-Term Examinations"
+                required
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="create-event_type">Event Type *</Label>
+              <select
+                id="create-event_type"
+                v-model="createFormData.event_type"
+                class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                required
+              >
+                <option value="">Select event type</option>
+                <option value="exam">Examination Period</option>
+                <option value="graduation">Graduation Day</option>
+                <option value="holiday">Holiday</option>
+                <option value="leave">Student Leave</option>
+                <option value="other">Other Event</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="create-term">Term *</Label>
+            <select
+              id="create-term"
+              v-model="createFormData.term"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              required
+            >
+              <option value="">Select term</option>
+              <option v-for="term in terms" :key="term.id" :value="term.id">
+                {{ term.name }} - {{ term.academic_year_name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="create-start_date">Start Date *</Label>
+              <Input
+                id="create-start_date"
+                v-model="createFormData.start_date"
+                type="date"
+                required
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="create-end_date">End Date</Label>
+              <Input
+                id="create-end_date"
+                v-model="createFormData.end_date"
+                type="date"
+              />
+              <p class="text-xs text-neutral-500">Leave empty for single-day events</p>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="create-description">Description</Label>
+            <Textarea
+              id="create-description"
+              v-model="createFormData.description"
+              placeholder="Additional details about the event..."
+              rows="4"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" @click="showCreateDialog = false">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="creating || !createFormData.term">
+              <Icon v-if="creating" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
+              {{ creating ? 'Creating...' : 'Create Event' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -164,6 +261,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -187,16 +285,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { SchoolEvent } from '~~/types'
+import type { SchoolEvent, Term } from '~~/types'
 import { useSchoolEvents } from '~~/composables/admin/useSchoolEvents'
-import { toast } from 'vue-sonner'
+import { useTerms } from '~~/composables/admin/useTerms'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: 'admin',
  // middleware: 'auth'
 })
 
-const { fetchEvents, deleteEvent, uploadBulkEvents } = useSchoolEvents()
+const { fetchEvents, deleteEvent, uploadBulkEvents, createEvent } = useSchoolEvents()
+const { fetchTerms } = useTerms()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 const config = useRuntimeConfig()
 const route = useRoute()
 
@@ -207,6 +308,19 @@ const filterType = ref('')
 const showBulkUpload = ref(false)
 const selectedFile = ref<File | null>(null)
 const uploading = ref(false)
+
+// Create event dialog state
+const showCreateDialog = ref(false)
+const creating = ref(false)
+const terms = ref<Term[]>([])
+const createFormData = ref<SchoolEvent>({
+  name: '',
+  event_type: '' as any,
+  term: 0,
+  start_date: '',
+  end_date: '',
+  description: ''
+})
 
 const filteredEvents = computed(() => {
   let filtered = events.value || []
@@ -310,9 +424,9 @@ const handleDelete = async (event: SchoolEvent) => {
   const { error } = await deleteEvent(event.id!)
   if (!error) {
     events.value = events.value.filter(e => e.id !== event.id)
-    toast.success('Event deleted successfully')
+    showSuccessToast('Event deleted successfully')
   } else {
-    toast.error('Failed to delete event', { description: error || 'An unexpected error occurred. Please try again.' })
+    showErrorToast(error || 'An unexpected error occurred. Please try again.' , 'Failed to delete event')
   }
 }
 
@@ -331,12 +445,12 @@ const handleBulkUpload = async () => {
   const { error } = await uploadBulkEvents(selectedFile.value)
 
   if (!error) {
-    toast.success('Events uploaded successfully')
+    showSuccessToast('Events uploaded successfully')
     showBulkUpload.value = false
     selectedFile.value = null
     loadEvents()
   } else {
-    toast.error('Failed to upload events', { description: error || 'An unexpected error occurred. Please try again.' })
+    showErrorToast(error || 'An unexpected error occurred. Please try again.' , 'Failed to upload events')
   }
 
   uploading.value = false
@@ -352,7 +466,7 @@ const downloadTemplate = async () => {
         }
       }
     )
-    
+
     if (response.ok) {
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
@@ -369,8 +483,63 @@ const downloadTemplate = async () => {
   }
 }
 
+const handleCreateSubmit = async () => {
+  creating.value = true
+
+  // Prepare payload - ensure proper data types
+  const payload = {
+    name: createFormData.value.name,
+    event_type: createFormData.value.event_type,
+    term: Number(createFormData.value.term),
+    start_date: createFormData.value.start_date,
+    end_date: createFormData.value.end_date || null,
+    description: createFormData.value.description || ''
+  }
+
+  // Remove empty end_date to send null to backend
+  if (!payload.end_date) {
+    payload.end_date = null
+  }
+
+  console.log('Creating event with payload:', payload)
+
+  const { data, error: apiError } = await createEvent(payload)
+
+  if (data) {
+    console.log('Event created successfully:', data)
+    showSuccessToast('Event created successfully')
+
+    // Reset form
+    createFormData.value = {
+      name: '',
+      event_type: '' as any,
+      term: 0,
+      start_date: '',
+      end_date: '',
+      description: ''
+    }
+
+    // Close dialog and reload events
+    showCreateDialog.value = false
+    await loadEvents()
+  } else {
+    console.error('Failed to create event:', apiError)
+    showErrorToast(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to create event')
+  }
+
+  creating.value = false
+}
+
+const loadTerms = async () => {
+  const { data } = await fetchTerms()
+  if (data) {
+    terms.value = data
+  }
+}
+
 onMounted(() => {
   loadEvents()
+  loadTerms()
 })
 
 // Reload events when navigating back to this page

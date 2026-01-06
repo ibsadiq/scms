@@ -11,7 +11,7 @@
           <Icon name="lucide:upload" class="w-4 h-4 mr-2" />
           Bulk Upload
         </Button>
-        <Button @click="navigateTo('/admin/subjects/create')" class="w-full sm:w-auto">
+        <Button @click="showCreateDialog = true" class="w-full sm:w-auto">
           <Icon name="lucide:plus" class="w-4 h-4 mr-2" />
           New Subject
         </Button>
@@ -52,7 +52,7 @@
         <div v-else-if="filteredSubjects.length === 0" class="text-center py-12">
           <Icon name="lucide:book-open" class="w-12 h-12 mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
           <p class="text-sm sm:text-base text-neutral-500 dark:text-neutral-400">No subjects found</p>
-          <Button @click="navigateTo('/admin/subjects/create')" variant="outline" class="mt-4 w-full sm:w-auto">
+          <Button @click="showCreateDialog = true" variant="outline" class="mt-4 w-full sm:w-auto">
             Create Your First Subject
           </Button>
         </div>
@@ -267,6 +267,106 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Create Subject Dialog -->
+    <Dialog v-model:open="showCreateDialog">
+      <DialogContent class="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Create Subject</DialogTitle>
+          <DialogDescription>Add a new subject to the curriculum</DialogDescription>
+        </DialogHeader>
+        <form @submit.prevent="handleCreateSubmit" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <Label for="create_name">Subject Name *</Label>
+              <Input
+                id="create_name"
+                v-model="createFormData.name"
+                placeholder="e.g., Mathematics"
+                required
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="create_subject_code">Subject Code</Label>
+              <Input
+                id="create_subject_code"
+                v-model="createFormData.subject_code"
+                placeholder="e.g., MATH101"
+                maxlength="10"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="create_department">Department *</Label>
+            <select
+              id="create_department"
+              v-model="createFormData.department"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
+              required
+            >
+              <option value="">Select department</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                {{ dept.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="create_description">Description</Label>
+            <Textarea
+              id="create_description"
+              v-model="createFormData.description"
+              placeholder="Brief description of the subject..."
+              rows="3"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <div class="flex items-center space-x-2">
+                <input
+                  id="create_is_selectable"
+                  v-model="createFormData.is_selectable"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-neutral-300"
+                />
+                <Label for="create_is_selectable" class="font-normal cursor-pointer">
+                  Optional Subject
+                </Label>
+              </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Check if this subject is optional for students</p>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex items-center space-x-2">
+                <input
+                  id="create_graded"
+                  v-model="createFormData.graded"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-neutral-300"
+                />
+                <Label for="create_graded" class="font-normal cursor-pointer">
+                  Graded Subject
+                </Label>
+              </div>
+              <p class="text-xs text-neutral-500 dark:text-neutral-400">Check if teachers can submit grades for this subject</p>
+            </div>
+          </div>
+
+          <DialogFooter class="flex-col sm:flex-row gap-2">
+            <Button type="button" variant="outline" @click="showCreateDialog = false" class="w-full sm:w-auto">
+              Cancel
+            </Button>
+            <Button type="submit" :disabled="creating || !createFormData.department" class="w-full sm:w-auto">
+              <Icon v-if="creating" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
+              {{ creating ? 'Creating...' : 'Create Subject' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -276,6 +376,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -311,7 +412,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useApi } from '~~/composables/useApi'
-import { useToast } from '~~/composables/useToast'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 
 definePageMeta({
@@ -323,7 +424,7 @@ interface Subject {
   id?: number
   name: string
   subject_code: string | null
-  department: number
+  department: number | string
   is_selectable: boolean
   graded: boolean
   description: string
@@ -336,6 +437,7 @@ interface Department {
 }
 
 const { apiCall } = useApi()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const loading = ref(true)
 const subjects = ref<Subject[]>([])
@@ -347,6 +449,20 @@ const selectedFile = ref<File | null>(null)
 const uploading = ref(false)
 const uploadError = ref('')
 const uploadSuccess = ref(false)
+
+const showCreateDialog = ref(false)
+const creating = ref(false)
+const createFormData = ref({
+  name: '',
+  subject_code: '',
+  department: '' as string | number,
+  is_selectable: false,
+  graded: true,
+  description: ''
+})
+
+const showDeleteDialog = ref(false)
+const subjectToDelete = ref<Subject | null>(null)
 
 const filteredSubjects = computed(() => {
   let filtered = subjects.value
@@ -365,8 +481,8 @@ const filteredSubjects = computed(() => {
   return filtered
 })
 
-const getDepartmentName = (deptId: number) => {
-  const dept = departments.value.find(d => d.id === deptId)
+const getDepartmentName = (deptId: number | string) => {
+  const dept = departments.value.find(d => d.id === (typeof deptId === 'string' ? parseInt(deptId) : deptId))
   return dept?.name || 'Unknown'
 }
 
@@ -384,18 +500,55 @@ const loadData = async () => {
   loading.value = false
 }
 
-const handleDelete = async (subject: Subject) => {
-  if (!confirm(`Are you sure you want to delete "${subject.name}"?`)) return
+const openDeleteDialog = (subject: Subject) => {
+  subjectToDelete.value = subject
+  showDeleteDialog.value = true
+}
 
-  const { error } = await apiCall(`/academic/subjects/${subject.id}/`, {
+const confirmDelete = async () => {
+  if (!subjectToDelete.value?.id) return
+
+  const { error } = await apiCall(`/academic/subjects/${subjectToDelete.value.id}/`, {
     method: 'DELETE'
   })
 
   if (!error) {
-    subjects.value = subjects.value.filter(s => s.id !== subject.id)
+    subjects.value = subjects.value.filter(s => s.id !== subjectToDelete.value?.id)
+    showSuccessToast('Subject deleted successfully')
+    showDeleteDialog.value = false
+    subjectToDelete.value = null
   } else {
-    alert('Failed to delete subject: ' + error)
+    showErrorToast(error, 'Failed to delete subject')
   }
+}
+
+const handleCreateSubmit = async () => {
+  creating.value = true
+
+  const { data, error: apiError } = await apiCall<Subject>('/academic/subjects/', {
+    method: 'POST',
+    body: createFormData.value
+  })
+
+  if (data) {
+    showSuccessToast('Subject created successfully')
+    showCreateDialog.value = false
+    // Reset form
+    createFormData.value = {
+      name: '',
+      subject_code: '',
+      department: '',
+      is_selectable: false,
+      graded: true,
+      description: ''
+    }
+    // Reload subjects list
+    await loadData()
+  } else {
+    showErrorToast(apiError, 'Failed to create subject')
+  }
+
+  creating.value = false
 }
 
 const handleFileSelect = (e: Event) => {

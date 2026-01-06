@@ -113,7 +113,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useBrand } from '~~/composables/useBrand'
 import { useAdmission } from '~~/composables/useAdmission'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 definePageMeta({
   layout: false,
@@ -153,7 +153,7 @@ const trackApplication = async () => {
     // Save tracking token
     localStorage.setItem('admission_tracking_token', result.tracking_token)
 
-    toast.success('Application found!')
+    showSuccessToast('Application found!')
 
     // Redirect to application view
     navigateTo(`/apply/view/${result.tracking_token}`)

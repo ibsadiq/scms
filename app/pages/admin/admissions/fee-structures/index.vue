@@ -324,12 +324,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionFeeStructure, AdmissionSession } from '~~/types/admission'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
+
+const { success, error: showError } = useToast()
 
 const { adminAPI } = useAdmissionAdmin()
 
@@ -365,7 +368,7 @@ const loadFeeStructures = async () => {
     feeStructures.value = await adminAPI.listFeeStructures(sessionId)
   } catch (error) {
     console.error('Error loading fee structures:', error)
-    toast.error('Failed to load fee structures')
+    showError('Failed to load fee structures')
   } finally {
     loading.value = false
   }
@@ -405,16 +408,16 @@ const saveFeeStructure = async () => {
   try {
     if (editingFee.value) {
       await adminAPI.updateFeeStructure(editingFee.value.id, feeForm.value)
-      toast.success('Fee structure updated successfully')
+      showSuccessToast('Fee structure updated successfully')
     } else {
       await adminAPI.createFeeStructure(feeForm.value)
-      toast.success('Fee structure created successfully')
+      showSuccessToast('Fee structure created successfully')
     }
     closeDialog()
     await loadFeeStructures()
   } catch (error: any) {
     console.error('Error saving fee structure:', error)
-    toast.error(error.data?.detail || 'Failed to save fee structure')
+    showError(error.data?.detail || 'Failed to save fee structure')
   } finally {
     isSaving.value = false
   }

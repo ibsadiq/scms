@@ -190,7 +190,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useStudentAuth } from '~~/composables/useStudentAuth'
 import { useBrand } from '~~/composables/useBrand'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 
 // Props
 const props = defineProps<{
@@ -246,7 +246,7 @@ const handleRegister = async () => {
 
   if (result.success) {
     success.value = 'Account created successfully! Redirecting to login...'
-    toast.success('Registration successful!')
+    showSuccessToast('Registration successful!')
 
     // Redirect to login after 2 seconds
     setTimeout(() => {

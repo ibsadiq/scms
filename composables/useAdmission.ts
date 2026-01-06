@@ -29,7 +29,13 @@ export const useAdmission = () => {
      * Get the active admission session
      */
     async getActiveSession() {
-      return await $fetch<AdmissionSession>(`${baseURL}/public/admissions/sessions/active/`)
+      const response = await $fetch<{
+        active: boolean
+        message: string
+        session: AdmissionSession | null
+      }>(`${baseURL}/public/admissions/sessions/active/`)
+
+      return response.session
     },
 
     /**

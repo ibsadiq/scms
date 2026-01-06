@@ -239,15 +239,19 @@ import type { Examination, Classroom } from '~~/types'
 import { useAssessments } from '~~/composables/admin/useAssessments'
 import { useClassrooms } from '~~/composables/admin/useClassrooms'
 import { useAuth } from '~~/composables/useAuth'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
 })
 
+const { success, error: showError } = useToast()
+
 const { fetchAssessments, createAssessment, updateAssessment, deleteAssessment } = useAssessments()
 const { fetchClassrooms } = useClassrooms()
 const { user } = useAuth()
+const { showErrorToast, showSuccessToast } = useErrorHandler()
 
 const loading = ref(true)
 const assessments = ref<Examination[]>([])
@@ -283,7 +287,7 @@ const loadAssessments = async () => {
   if (data) {
     assessments.value = data
   } else if (error) {
-    toast.error('Failed to load assessments: ' + error)
+    showError('Failed to load assessments: ' + error)
   }
 
   loading.value = false
@@ -325,9 +329,9 @@ const handleDelete = async (assessment: Examination) => {
   const { error } = await deleteAssessment(assessment.id!)
 
   if (error) {
-    toast.error('Failed to delete assessment: ' + error)
+    showError('Failed to delete assessment: ' + error)
   } else {
-    toast.success('Assessment deleted successfully')
+    showSuccessToast('Assessment deleted successfully')
     assessments.value = assessments.value.filter(a => a.id !== assessment.id)
   }
 }
@@ -370,9 +374,9 @@ const handleSubmit = async () => {
 
   if (result.error) {
     formError.value = result.error
-    toast.error(`Failed to ${editingAssessment.value ? 'update' : 'create'} assessment: ${result.error}`)
+    showError(`Failed to ${editingAssessment.value ? 'update' : 'create'} assessment: ${result.error}`)
   } else {
-    toast.success(`Assessment ${editingAssessment.value ? 'updated' : 'created'} successfully`)
+    showSuccessToast(`Assessment ${editingAssessment.value ? 'updated' : 'created'} successfully`)
     showCreateDialog.value = false
     resetForm()
     await loadAssessments()

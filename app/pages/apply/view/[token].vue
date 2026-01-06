@@ -282,12 +282,15 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useBrand } from '~~/composables/useBrand'
 import { useAdmission } from '~~/composables/useAdmission'
-import { toast } from 'vue-sonner'
+import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionApplication, AdmissionDocument, PaymentInfo, NextStepsInfo, DocumentType, ApplicationStatus } from '~~/types/admission'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: false,
 })
+
+const { success, error: showError } = useToast()
 
 const route = useRoute()
 const { schoolLogo, school, product } = useBrand()
@@ -335,10 +338,10 @@ const submitApplication = async () => {
   isSubmitting.value = true
   try {
     await publicAPI.submitApplication(token.value)
-    toast.success('Application submitted successfully!')
+    showSuccessToast('Application submitted successfully!')
     await loadApplication()
   } catch (err: any) {
-    toast.error(err.data?.detail || 'Failed to submit application')
+    showError(err.data?.detail || 'Failed to submit application')
   } finally {
     isSubmitting.value = false
   }
@@ -348,10 +351,10 @@ const acceptOffer = async () => {
   isAccepting.value = true
   try {
     await publicAPI.acceptOffer(token.value)
-    toast.success('Offer accepted successfully!')
+    showSuccessToast('Offer accepted successfully!')
     await loadApplication()
   } catch (err: any) {
-    toast.error(err.data?.detail || 'Failed to accept offer')
+    showError(err.data?.detail || 'Failed to accept offer')
   } finally {
     isAccepting.value = false
   }
@@ -377,12 +380,12 @@ const uploadDocument = async () => {
     }
 
     await publicAPI.uploadDocument(token.value, formData)
-    toast.success('Document uploaded successfully!')
+    showSuccessToast('Document uploaded successfully!')
     showUploadDialog.value = false
     uploadForm.value = { document_type: '', file: null, description: '' }
     await loadApplication()
   } catch (err: any) {
-    toast.error(err.data?.detail || 'Failed to upload document')
+    showError(err.data?.detail || 'Failed to upload document')
   } finally {
     isUploading.value = false
   }
@@ -393,10 +396,10 @@ const deleteDocument = async (documentId: number) => {
 
   try {
     await publicAPI.deleteDocument(documentId)
-    toast.success('Document deleted successfully!')
+    showSuccessToast('Document deleted successfully!')
     await loadApplication()
   } catch (err: any) {
-    toast.error(err.data?.detail || 'Failed to delete document')
+    showError(err.data?.detail || 'Failed to delete document')
   }
 }
 
