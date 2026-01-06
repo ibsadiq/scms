@@ -16,6 +16,9 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Install build dependencies
+RUN apk add --no-cache libc6-compat
+
 WORKDIR /app
 
 # ====================
@@ -26,8 +29,8 @@ FROM base AS deps
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install dependencies (without --frozen-lockfile to be more flexible)
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --no-frozen-lockfile
+# Install dependencies
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 # ====================
 # Development Stage
@@ -74,6 +77,8 @@ ARG NUXT_PUBLIC_API_BASE
 ENV NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL}
 ENV NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE}
 ENV NODE_ENV=production
+# Increase Node.js memory limit for build (4GB)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Build the application
 RUN pnpm run build
