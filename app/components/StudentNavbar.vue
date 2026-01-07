@@ -40,10 +40,6 @@
             <Icon name="lucide:user" class="w-4 h-4 mr-2" />
             My Profile
           </DropdownMenuItem>
-          <DropdownMenuItem @click="navigateTo('/student/settings')">
-            <Icon name="lucide:settings" class="w-4 h-4 mr-2" />
-            Settings
-          </DropdownMenuItem>
           <DropdownMenuItem @click="showChangePassword = true">
             <Icon name="lucide:key" class="w-4 h-4 mr-2" />
             Change Password

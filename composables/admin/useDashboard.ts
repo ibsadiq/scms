@@ -52,6 +52,14 @@ export const useDashboard = () => {
           }
         }
       )
+
+      // Filter out university level from backend response
+      if (response.studentsByLevel) {
+        response.studentsByLevel = response.studentsByLevel.filter(
+          level => level.name.toLowerCase() !== 'university'
+        )
+      }
+
       return response
     } catch (error: any) {
       // Fallback: Fetch from individual endpoints
@@ -116,10 +124,6 @@ export const useDashboard = () => {
 
         const sssCount = Object.entries(studentsByClass)
           .filter(([key]) => key.toLowerCase().includes('sss'))
-          .reduce((sum, [_, count]) => sum + count, 0)
-
-        const universityCount = Object.entries(studentsByClass)
-          .filter(([key]) => key.toLowerCase().includes('year'))
           .reduce((sum, [_, count]) => sum + count, 0)
 
         // Recent admissions (only active students with admission dates)
@@ -192,12 +196,6 @@ export const useDashboard = () => {
               count: sssCount,
               percentage: Math.round((sssCount / activeStudents) * 100) || 0,
               icon: 'lucide:graduation-cap'
-            },
-            {
-              name: 'University',
-              count: universityCount,
-              percentage: Math.round((universityCount / activeStudents) * 100) || 0,
-              icon: 'lucide:school'
             }
           ],
           financial: {
@@ -245,8 +243,7 @@ export const useDashboard = () => {
           studentsByLevel: [
             { name: 'Primary', count: 0, percentage: 0, icon: 'lucide:baby' },
             { name: 'JSS', count: 0, percentage: 0, icon: 'lucide:book' },
-            { name: 'SSS', count: 0, percentage: 0, icon: 'lucide:graduation-cap' },
-            { name: 'University', count: 0, percentage: 0, icon: 'lucide:school' }
+            { name: 'SSS', count: 0, percentage: 0, icon: 'lucide:graduation-cap' }
           ],
           financial: {
             collected: 0,

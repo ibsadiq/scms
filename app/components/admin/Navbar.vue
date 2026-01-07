@@ -52,10 +52,6 @@
             <Icon name="lucide:user" class="w-4 h-4 mr-2" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem @click="navigateTo('/admin/settings')">
-            <Icon name="lucide:settings" class="w-4 h-4 mr-2" />
-            Settings
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="handleLogout" class="text-red-600" :disabled="isLoggingOut">
             <Icon name="lucide:log-out" class="w-4 h-4 mr-2" />

@@ -1,6 +1,8 @@
 // composables/admin/useProfile.ts
 import type { User } from '~~/types'
 import { useAuth } from '~~/composables/useAuth'
+import { useApi } from '~~/composables/useApi'
+
 export interface AdminProfile extends User {
   full_name?: string
   date_joined?: string
@@ -21,7 +23,7 @@ export interface UpdateAdminProfileData {
 }
 
 export const useAdminProfile = () => {
-  const { $api } = useNuxtApp()
+  const { apiCall } = useApi()
   const { user, fetchUser } = useAuth()
 
   const profile = ref<AdminProfile | null>(null)
@@ -35,20 +37,20 @@ export const useAdminProfile = () => {
     loading.value = true
     error.value = null
 
-    try {
-      const response = await $api<AdminProfile>('/users/profile/', {
-        method: 'GET'
-      })
+    const { data, error: apiError } = await apiCall<AdminProfile>('/users/profile/', {
+      method: 'GET'
+    })
 
-      profile.value = response
-      return { success: true, data: response }
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load profile'
-      console.error('Failed to fetch admin profile:', err)
+    loading.value = false
+
+    if (apiError || !data) {
+      error.value = apiError?.message || 'Failed to load profile'
+      console.error('Failed to fetch admin profile:', apiError)
       return { success: false, error: error.value }
-    } finally {
-      loading.value = false
     }
+
+    profile.value = data
+    return { success: true, data }
   }
 
   /**
@@ -58,30 +60,32 @@ export const useAdminProfile = () => {
     loading.value = true
     error.value = null
 
-    try {
-      if (!user.value?.id) {
-        throw new Error('User ID not found')
-      }
-
-      // Use the profile endpoint for updates
-      const response = await $api<AdminProfile>('/users/profile/', {
-        method: 'PATCH',
-        body: data
-      })
-
-      profile.value = response
-
-      // Refresh the user data in the auth composable
-      await fetchUser()
-
-      return { success: true, data: response, message: 'Profile updated successfully' }
-    } catch (err: any) {
-      error.value = err.message || 'Failed to update profile'
-      console.error('Failed to update admin profile:', err)
-      return { success: false, error: error.value }
-    } finally {
+    if (!user.value?.id) {
       loading.value = false
+      error.value = 'User ID not found'
+      return { success: false, error: error.value }
     }
+
+    // Use the profile endpoint for updates
+    const { data: responseData, error: apiError } = await apiCall<AdminProfile>('/users/profile/', {
+      method: 'PATCH',
+      body: data
+    })
+
+    loading.value = false
+
+    if (apiError || !responseData) {
+      error.value = apiError?.message || 'Failed to update profile'
+      console.error('Failed to update admin profile:', apiError)
+      return { success: false, error: error.value }
+    }
+
+    profile.value = responseData
+
+    // Refresh the user data in the auth composable
+    await fetchUser()
+
+    return { success: true, data: responseData, message: 'Profile updated successfully' }
   }
 
   return {

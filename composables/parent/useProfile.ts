@@ -1,6 +1,7 @@
 // composables/parent/useProfile.ts
 import type { Parent, User } from '~~/types'
 import { useAuth } from '~~/composables/useAuth'
+import { useApi } from '~~/composables/useApi'
 
 export interface ParentProfile extends Parent {
   full_name?: string
@@ -17,7 +18,7 @@ export interface UpdateParentProfileData {
 }
 
 export const useParentProfile = () => {
-  const { $api } = useNuxtApp()
+  const { apiCall } = useApi()
   const { user } = useAuth()
 
   const profile = ref<ParentProfile | null>(null)
@@ -31,31 +32,39 @@ export const useParentProfile = () => {
     loading.value = true
     error.value = null
 
-    try {
-      // Since parent data is already in the user object, we can use it directly
-      // But we'll also fetch the full profile from the API for complete data
-      const response = await $api<User>('/users/profile/', {
+    // Fetch user profile to get parent_id
+    const { data: userData, error: userError } = await apiCall<User>('/users/profile/', {
+      method: 'GET'
+    })
+
+    if (userError || !userData) {
+      loading.value = false
+      error.value = userError?.message || 'Failed to load profile'
+      console.error('Failed to fetch parent profile:', userError)
+      return { success: false, error: error.value }
+    }
+
+    // If the user is a parent, fetch their complete parent profile
+    if (userData.isParent && userData.parent_id) {
+      const { data: parentData, error: parentError } = await apiCall<ParentProfile>(`/users/parents/${userData.parent_id}/`, {
         method: 'GET'
       })
 
-      // If the user is a parent, fetch their complete parent profile
-      if (response.isParent && response.parent_id) {
-        const parentData = await $api<ParentProfile>(`/users/parents/${response.parent_id}/`, {
-          method: 'GET'
-        })
-        profile.value = parentData
-      } else {
-        // Fallback to user data
-        profile.value = response as any
+      loading.value = false
+
+      if (parentError || !parentData) {
+        error.value = parentError?.message || 'Failed to load parent details'
+        console.error('Failed to fetch parent details:', parentError)
+        return { success: false, error: error.value }
       }
 
-      return { success: true, data: profile.value }
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load profile'
-      console.error('Failed to fetch parent profile:', err)
-      return { success: false, error: error.value }
-    } finally {
+      profile.value = parentData
+      return { success: true, data: parentData }
+    } else {
+      // Fallback to user data
       loading.value = false
+      profile.value = userData as any
+      return { success: true, data: userData as any }
     }
   }
 
@@ -66,25 +75,27 @@ export const useParentProfile = () => {
     loading.value = true
     error.value = null
 
-    try {
-      if (!user.value?.parent_id) {
-        throw new Error('Parent ID not found')
-      }
-
-      const response = await $api<ParentProfile>(`/users/parents/${user.value.parent_id}/`, {
-        method: 'PATCH',
-        body: data
-      })
-
-      profile.value = response
-      return { success: true, data: response, message: 'Profile updated successfully' }
-    } catch (err: any) {
-      error.value = err.message || 'Failed to update profile'
-      console.error('Failed to update parent profile:', err)
-      return { success: false, error: error.value }
-    } finally {
+    if (!user.value?.parent_id) {
       loading.value = false
+      error.value = 'Parent ID not found'
+      return { success: false, error: error.value }
     }
+
+    const { data: responseData, error: apiError } = await apiCall<ParentProfile>(`/users/parents/${user.value.parent_id}/`, {
+      method: 'PATCH',
+      body: data
+    })
+
+    loading.value = false
+
+    if (apiError || !responseData) {
+      error.value = apiError?.message || 'Failed to update profile'
+      console.error('Failed to update parent profile:', apiError)
+      return { success: false, error: error.value }
+    }
+
+    profile.value = responseData
+    return { success: true, data: responseData, message: 'Profile updated successfully' }
   }
 
   return {

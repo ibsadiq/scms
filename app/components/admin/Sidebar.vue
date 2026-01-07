@@ -307,11 +307,6 @@
                 icon="lucide:file-bar-chart"
                 label="Financial Reports"
               />
-              <SidebarLink
-                to="/admin/reports/attendance"
-                icon="lucide:file-clock"
-                label="Attendance Reports"
-              />
             </div>
           </transition>
         </div>
