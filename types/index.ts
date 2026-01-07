@@ -12,6 +12,8 @@ export interface User {
   isParent: boolean
   isStudent: boolean
   student_id?: number
+  teacher_id?: number
+  parent_id?: number
 }
 
 export interface LoginCredentials {
@@ -223,6 +225,8 @@ export interface Student {
   date_of_birth: string
   gender: 'Male' | 'Female' | 'Other'
   parent_contact: string
+  email?: string | null
+  phone_number?: string | null
   region?: string | null
   city?: string | null
   street?: string | null

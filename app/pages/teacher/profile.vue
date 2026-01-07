@@ -1,4 +1,4 @@
-<!-- pages/student/profile.vue -->
+<!-- pages/teacher/profile.vue -->
 <template>
   <div class="space-y-6">
     <!-- Page Header -->
@@ -35,26 +35,26 @@
           <div class="flex flex-col items-center text-center">
             <!-- Profile Photo -->
             <div class="w-32 h-32 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center mb-4">
-              <Icon v-if="!profile.photo" name="lucide:user" size="64" class="text-white" />
-              <img v-else :src="profile.photo" :alt="fullName" class="w-full h-full rounded-full object-cover" />
+              <Icon v-if="!profile.image" name="lucide:user" size="64" class="text-white" />
+              <img v-else :src="profile.image" :alt="fullName" class="w-full h-full rounded-full object-cover" />
             </div>
 
-            <!-- Student Info -->
+            <!-- Teacher Info -->
             <h2 class="text-xl font-bold text-neutral-900 dark:text-neutral-100">{{ fullName }}</h2>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{{ profile.admission_number }}</p>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{{ profile.empId || 'Teacher' }}</p>
 
             <div class="mt-4 space-y-2 w-full">
-              <div class="flex items-center justify-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                <Icon name="lucide:school" class="w-4 h-4" />
-                <span>{{ profile.classroom_display || profile.current_class || 'Not Assigned' }}</span>
+              <div v-if="profile.designation" class="flex items-center justify-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                <Icon name="lucide:briefcase" class="w-4 h-4" />
+                <span>{{ profile.designation }}</span>
               </div>
-              <div class="flex items-center justify-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+              <div v-if="profile.subject_specialization && profile.subject_specialization.length > 0" class="flex items-center justify-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                 <Icon name="lucide:book-open" class="w-4 h-4" />
-                <span>{{ profile.grade_level_name || 'N/A' }}</span>
+                <span>{{ profile.subject_specialization.join(', ') }}</span>
               </div>
               <div class="flex items-center justify-center gap-2 text-sm">
-                <Badge :variant="profile.status === 'Active' ? 'default' : 'secondary'">
-                  {{ profile.status }}
+                <Badge :variant="!profile.inactive ? 'default' : 'secondary'">
+                  {{ !profile.inactive ? 'Active' : 'Inactive' }}
                 </Badge>
               </div>
             </div>
@@ -77,17 +77,36 @@
                   v-model="editForm.phone_number"
                   type="tel"
                   placeholder="08012345678"
-                  maxlength="11"
                 />
               </div>
 
               <div class="space-y-2">
-                <Label for="email">Email Address (Optional)</Label>
+                <Label for="email">Email Address</Label>
                 <Input
                   id="email"
                   v-model="editForm.email"
                   type="email"
-                  placeholder="student@email.com"
+                  placeholder="teacher@email.com"
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="alt_email">Alternative Email</Label>
+                <Input
+                  id="alt_email"
+                  v-model="editForm.alt_email"
+                  type="email"
+                  placeholder="alternative@email.com"
+                />
+              </div>
+
+              <div class="space-y-2 md:col-span-2">
+                <Label for="address">Address</Label>
+                <Input
+                  id="address"
+                  v-model="editForm.address"
+                  type="text"
+                  placeholder="Your address"
                 />
               </div>
             </div>
@@ -122,21 +141,30 @@
               </div>
 
               <div>
+                <Label class="text-neutral-500 dark:text-neutral-400">Username</Label>
+                <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.username }}</p>
+              </div>
+
+              <div>
                 <Label class="text-neutral-500 dark:text-neutral-400">Gender</Label>
-                <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.gender }}</p>
+                <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.gender || 'N/A' }}</p>
               </div>
 
               <div>
                 <Label class="text-neutral-500 dark:text-neutral-400">Date of Birth</Label>
                 <p class="text-neutral-900 dark:text-neutral-100 font-medium">
                   {{ formatDate(profile.date_of_birth) }}
-                  <span v-if="profile.age" class="text-sm text-neutral-500">({{ profile.age }} years)</span>
                 </p>
               </div>
 
-              <div>
-                <Label class="text-neutral-500 dark:text-neutral-400">Admission Date</Label>
-                <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ formatDate(profile.admission_date) }}</p>
+              <div v-if="profile.national_id">
+                <Label class="text-neutral-500 dark:text-neutral-400">National ID</Label>
+                <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.national_id }}</p>
+              </div>
+
+              <div v-if="profile.empId">
+                <Label class="text-neutral-500 dark:text-neutral-400">Employee ID</Label>
+                <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.empId }}</p>
               </div>
             </div>
 
@@ -148,7 +176,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label class="text-neutral-500 dark:text-neutral-400">Phone Number</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.parent_contact || 'Not provided' }}</p>
+                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.phone_number || 'Not provided' }}</p>
                 </div>
 
                 <div>
@@ -157,61 +185,36 @@
                 </div>
 
                 <div>
+                  <Label class="text-neutral-500 dark:text-neutral-400">Alternative Email</Label>
+                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.alt_email || 'Not provided' }}</p>
+                </div>
+
+                <div>
                   <Label class="text-neutral-500 dark:text-neutral-400">Address</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">
-                    {{ formatAddress(profile) || 'Not provided' }}
-                  </p>
+                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.address || 'Not provided' }}</p>
                 </div>
               </div>
             </div>
 
-            <Separator />
+            <Separator v-if="profile.subject_specialization && profile.subject_specialization.length > 0" />
 
-            <!-- Guardian Information -->
-            <div>
-              <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Guardian Information</h3>
+            <!-- Professional Information -->
+            <div v-if="profile.subject_specialization && profile.subject_specialization.length > 0">
+              <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Professional Information</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label class="text-neutral-500 dark:text-neutral-400">Guardian Name</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.guardian_name || 'Not provided' }}</p>
+                <div v-if="profile.designation">
+                  <Label class="text-neutral-500 dark:text-neutral-400">Designation</Label>
+                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.designation }}</p>
                 </div>
 
-                <div>
-                  <Label class="text-neutral-500 dark:text-neutral-400">Relationship</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.guardian_relationship || 'Not provided' }}</p>
+                <div v-if="profile.subject_specialization && profile.subject_specialization.length > 0">
+                  <Label class="text-neutral-500 dark:text-neutral-400">Subject Specialization</Label>
+                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.subject_specialization.join(', ') }}</p>
                 </div>
 
-                <div>
-                  <Label class="text-neutral-500 dark:text-neutral-400">Guardian Phone</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.guardian_phone || 'Not provided' }}</p>
-                </div>
-
-                <div>
-                  <Label class="text-neutral-500 dark:text-neutral-400">Emergency Contact</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.emergency_phone || 'Not provided' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <Separator v-if="profile.medical_info || profile.blood_group" />
-
-            <!-- Medical Information -->
-            <div v-if="profile.medical_info || profile.blood_group">
-              <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Medical Information</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div v-if="profile.blood_group">
-                  <Label class="text-neutral-500 dark:text-neutral-400">Blood Group</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.blood_group }}</p>
-                </div>
-
-                <div v-if="profile.allergies">
-                  <Label class="text-neutral-500 dark:text-neutral-400">Allergies</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.allergies }}</p>
-                </div>
-
-                <div v-if="profile.medical_conditions" class="md:col-span-2">
-                  <Label class="text-neutral-500 dark:text-neutral-400">Medical Conditions</Label>
-                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.medical_conditions }}</p>
+                <div v-if="profile.short_name">
+                  <Label class="text-neutral-500 dark:text-neutral-400">Short Name</Label>
+                  <p class="text-neutral-900 dark:text-neutral-100 font-medium">{{ profile.short_name }}</p>
                 </div>
               </div>
             </div>
@@ -230,22 +233,24 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { useStudentProfile } from '~~/composables/student/useProfile'
+import { useTeacherProfile } from '~~/composables/teacher/useProfile'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
-  middleware: 'student',
-  layout: 'student'
+  middleware: 'teacher',
+  layout: 'teacher'
 })
 
 const { success: showSuccessToast, error: showError } = useToast()
 
-const { profile, loading, error, fetchProfile, updateProfile } = useStudentProfile()
+const { profile, loading, error, fetchProfile, updateProfile } = useTeacherProfile()
 
 const isEditing = ref(false)
 const editForm = ref({
   phone_number: '',
-  email: ''
+  email: '',
+  alt_email: '',
+  address: ''
 })
 
 // Computed full name
@@ -260,7 +265,7 @@ const fullName = computed(() => {
 })
 
 // Format date helper
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -269,19 +274,15 @@ const formatDate = (dateString: string) => {
   })
 }
 
-// Format address helper
-const formatAddress = (profile: any) => {
-  const parts = [profile.street, profile.city, profile.region].filter(Boolean)
-  return parts.join(', ') || null
-}
-
 // Start editing
 const startEditing = () => {
   if (!profile.value) return
 
   editForm.value = {
-    phone_number: profile.value.parent_contact || '',
-    email: profile.value.email || ''
+    phone_number: profile.value.phone_number || '',
+    email: profile.value.email || '',
+    alt_email: profile.value.alt_email || '',
+    address: profile.value.address || ''
   }
 
   isEditing.value = true
@@ -292,7 +293,9 @@ const cancelEditing = () => {
   isEditing.value = false
   editForm.value = {
     phone_number: '',
-    email: ''
+    email: '',
+    alt_email: '',
+    address: ''
   }
 }
 
@@ -314,6 +317,6 @@ onMounted(async () => {
 })
 
 useHead({
-  title: 'My Profile'
+  title: 'My Profile - Teacher'
 })
 </script>
