@@ -1,5 +1,6 @@
 // composables/teacher/useProfile.ts
-import type { Teacher } from '~~/types'
+import type { Teacher, User } from '~~/types'
+import { useAuth } from '~~/composables/useAuth'
 
 export interface TeacherProfile extends Teacher {
   full_name?: string

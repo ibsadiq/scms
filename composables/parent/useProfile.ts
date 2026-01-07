@@ -1,5 +1,6 @@
 // composables/parent/useProfile.ts
-import type { Parent } from '~~/types'
+import type { Parent, User } from '~~/types'
+import { useAuth } from '~~/composables/useAuth'
 
 export interface ParentProfile extends Parent {
   full_name?: string

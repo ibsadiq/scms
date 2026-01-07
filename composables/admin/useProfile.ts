@@ -1,6 +1,6 @@
 // composables/admin/useProfile.ts
 import type { User } from '~~/types'
-
+import { useAuth } from '~~/composables/useAuth'
 export interface AdminProfile extends User {
   full_name?: string
   date_joined?: string
