@@ -237,7 +237,6 @@ import { useTeacherProfile } from '~~/composables/teacher/useProfile'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
-  middleware: 'teacher',
   layout: 'teacher'
 })
 

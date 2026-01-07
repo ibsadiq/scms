@@ -234,7 +234,6 @@ import { useStudentProfile } from '~~/composables/student/useProfile'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
-  middleware: 'student',
   layout: 'student'
 })
 

@@ -249,8 +249,7 @@ import { useAdminProfile } from '~~/composables/admin/useProfile'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
-  middleware: 'auth',
-  layout: 'default'
+  layout: 'admin'
 })
 
 const { success: showSuccessToast, error: showError } = useToast()

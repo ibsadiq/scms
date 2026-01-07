@@ -282,7 +282,6 @@ import { useParentProfile } from '~~/composables/parent/useProfile'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
-  middleware: 'parent',
   layout: 'parent'
 })
 
