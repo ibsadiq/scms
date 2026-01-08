@@ -176,7 +176,7 @@
     <!-- Bottom Info -->
     <div class="absolute bottom-4 left-0 right-0 text-center">
       <p class="text-xs text-neutral-500 dark:text-neutral-400">
-        {{ product() }} © {{ new Date().getFullYear() }}
+        {{ product() }} © 2025
       </p>
     </div>
   </div>

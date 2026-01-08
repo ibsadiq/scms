@@ -70,12 +70,6 @@
             />
           </div>
 
-          <Alert v-if="submitError" variant="destructive">
-            <Icon name="lucide:alert-circle" class="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{{ submitError }}</AlertDescription>
-          </Alert>
-
           <Button type="submit" class="w-full" :disabled="submitting">
             <Icon v-if="submitting" name="lucide:loader-2" class="w-4 h-4 mr-2 animate-spin" />
             {{ submitting ? 'Creating Account...' : 'Create Account' }}
@@ -91,9 +85,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useApi } from '~~/composables/useApi'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
+import { useAuthStore } from '~~/stores/auth'
 
 definePageMeta({
   layout: false, // Use no layout for standalone page
@@ -139,14 +133,18 @@ onMounted(async () => {
 const handleSubmit = async () => {
   submitError.value = ''
 
+  const { error: showError } = useToast()
+
   // Validate passwords match
   if (formData.value.password !== formData.value.password_confirm) {
+    showError('Passwords do not match', 'Please make sure both passwords are identical.')
     submitError.value = 'Passwords do not match'
     return
   }
 
   // Validate password length
   if (formData.value.password.length < 8) {
+    showError('Password too short', 'Password must be at least 8 characters long.')
     submitError.value = 'Password must be at least 8 characters long'
     return
   }
@@ -168,9 +166,8 @@ const handleSubmit = async () => {
     authStore.setTokens(data.tokens.access, data.tokens.refresh)
     authStore.setUser(data.user)
 
-    showSuccessToast('Account created successfully!', {
-      description: 'Welcome to the system. Redirecting to your dashboard...'
-    })
+    const { success } = useToast()
+    success('Account created successfully!', 'Welcome to the system. Redirecting to your dashboard...')
 
     // Redirect based on user role
     setTimeout(() => {
@@ -185,7 +182,9 @@ const handleSubmit = async () => {
       }
     }, 1500)
   } else {
-    submitError.value = apiError || 'Failed to create account'
+    const msg = apiError || 'Failed to create account'
+    showError('Account Creation Failed', msg)
+    submitError.value = msg
   }
 
   submitting.value = false
