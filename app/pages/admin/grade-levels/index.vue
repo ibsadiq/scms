@@ -104,7 +104,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useApi } from '~~/composables/useApi'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import { useToast } from '~~/composables/useToast'
 
 
@@ -152,12 +151,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = gradeLevels.value.findIndex(g => g.id === editingGrade.value!.id)
       if (index !== -1) gradeLevels.value[index] = data
-      showSuccessToast('Grade level updated successfully')
+      success('Grade level updated successfully')
       closeDialog()
     } else {
-      showError('Failed to update grade level', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to update grade level', apiError || 'An unexpected error occurred. Please try again.')
     }
   } else {
     // When creating, only send the name - backend will auto-generate the ID
@@ -167,12 +164,10 @@ const handleSubmit = async () => {
     )
     if (data) {
       gradeLevels.value.push(data)
-      showSuccessToast('Grade level created successfully')
+      success('Grade level created successfully')
       closeDialog()
     } else {
-      showError('Failed to create grade level', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to create grade level', apiError || 'An unexpected error occurred. Please try again.')
     }
   }
 
@@ -194,11 +189,9 @@ const handleDelete = async (grade: GradeLevel) => {
 
   if (!apiError) {
     gradeLevels.value = gradeLevels.value.filter(g => g.id !== grade.id)
-    showSuccessToast('Grade level deleted successfully')
+    success('Grade level deleted successfully')
   } else {
-    showError('Failed to delete grade level', {
-      description: apiError
-    })
+    showError('Failed to delete grade level', apiError || 'An unexpected error occurred.')
   }
 }
 

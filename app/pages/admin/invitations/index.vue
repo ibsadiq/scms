@@ -277,7 +277,7 @@ const handleResend = async (invitation: Invitation) => {
 
   const { error } = await resendInvitation(invitation.id)
   if (!error) {
-    showSuccessToast('Invitation resent successfully')
+    success('Invitation resent successfully')
   } else {
     showError('Failed to resend invitation: ' + error)
   }
@@ -289,7 +289,7 @@ const handleCopyLink = async (invitation: Invitation) => {
 
   try {
     await navigator.clipboard.writeText(invitationLink)
-    showSuccessToast('Invitation link copied to clipboard')
+    success('Invitation link copied to clipboard')
   } catch (err) {
     showError('Failed to copy link')
   }
@@ -301,7 +301,7 @@ const handleDelete = async (invitation: Invitation) => {
   const { error } = await deleteInvitation(invitation.id)
   if (!error) {
     invitations.value = invitations.value.filter(inv => inv.id !== invitation.id)
-    showSuccessToast('Invitation deleted successfully')
+    success('Invitation deleted successfully')
   } else {
     showError('Failed to delete invitation: ' + error)
   }

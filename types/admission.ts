@@ -45,8 +45,8 @@ export interface AdmissionSession {
 export interface AdmissionFeeStructure {
   id: number
   admission_session: number
-  class_room: number
-  class_room_name: string
+  grade_levels: number[]
+  grade_level_names: string[]
   application_fee: number
   application_fee_required: boolean
   entrance_exam_required: boolean

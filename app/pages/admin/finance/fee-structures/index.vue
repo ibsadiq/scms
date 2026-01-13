@@ -290,7 +290,6 @@ import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
 import { useTerms } from '~~/composables/admin/useTerms'
 import { formatDate } from '~~/utils/helpers'
 import { useApi } from '~~/composables/useApi'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
@@ -411,23 +410,19 @@ const handleSubmit = async () => {
     if (data) {
       const index = fees.value.findIndex(f => f.id === editingFee.value!.id)
       if (index !== -1) fees.value[index] = data
-      showSuccessToast('Fee structure updated successfully')
+      success('Fee structure updated successfully')
       closeDialog()
     } else {
-      showError('Failed to update fee structure', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to update fee structure', apiError || 'An unexpected error occurred. Please try again.')
     }
   } else {
     const { data, error: apiError } = await createFee(formData.value as FeeStructure)
     if (data) {
       fees.value.push(data)
-      showSuccessToast('Fee structure created successfully')
+      success('Fee structure created successfully')
       closeDialog()
     } else {
-      showError('Failed to create fee structure', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to create fee structure', apiError || 'An unexpected error occurred. Please try again.')
     }
   }
 
@@ -440,11 +435,9 @@ const handleDelete = async (fee: FeeStructure) => {
   const { error: apiError } = await deleteFee(fee.id!)
   if (!apiError) {
     fees.value = fees.value.filter(f => f.id !== fee.id)
-    showSuccessToast('Fee structure deleted successfully')
+    success('Fee structure deleted successfully')
   } else {
-    showError('Failed to delete fee structure', {
-      description: apiError
-    })
+    showError('Failed to delete fee structure', apiError || 'An unexpected error occurred.')
   }
 }
 

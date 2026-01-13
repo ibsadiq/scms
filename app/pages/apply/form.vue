@@ -78,8 +78,8 @@
                   required
                 >
                   <option value="">Select a class</option>
-                  <option v-for="fee in feeStructures" :key="fee.id" :value="fee.class_room" :disabled="!fee.has_capacity">
-                    {{ fee.class_room_name }} {{ !fee.has_capacity ? '(Full)' : '' }}
+                  <option v-for="fee in feeStructures" :key="fee.id" :value="fee.id" :disabled="!fee.has_capacity">
+                    {{ fee.grade_level_names.join(', ') }} {{ !fee.has_capacity ? '(Full)' : '' }}
                   </option>
                 </select>
               </div>
@@ -304,12 +304,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useBrand } from '~~/composables/useBrand'
 import { useAdmission } from '~~/composables/useAdmission'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 import type { AdmissionSession, AdmissionFeeStructure, CreateApplicationRequest, Gender } from '~~/types/admission'
 
 definePageMeta({
   layout: false,
 })
+
+const { success: showSuccessToast, error: showErrorToast } = useToast()
 
 const { schoolLogo, school, product } = useBrand()
 const { publicAPI } = useAdmission()
@@ -360,7 +362,7 @@ const form = ref<CreateApplicationRequest>({
 })
 
 const selectedFeeStructure = computed(() => {
-  return feeStructures.value.find(f => f.class_room === form.value.applying_for_class)
+  return feeStructures.value.find(f => f.id === form.value.applying_for_class)
 })
 
 const loadData = async () => {
@@ -400,19 +402,13 @@ const handleSubmit = async () => {
 
   try {
     const result = await publicAPI.createApplication(form.value)
-
-    // Save tracking token
     localStorage.setItem('admission_tracking_token', result.tracking_token || '')
-
     showSuccessToast('Application submitted successfully!')
-
-    // Redirect to view application
     navigateTo(`/apply/view/${result.tracking_token}`)
   } catch (err: any) {
-    console.error('Error submitting application:', err)
-    errorMessage.value = err.data?.detail || err.data?.error || 'Failed to submit application'
-
-    // Scroll to top to show error
+    const message = err.data?.detail || err.data?.error || 'Failed to submit application'
+    errorMessage.value = message
+    showErrorToast(message)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     isSubmitting.value = false

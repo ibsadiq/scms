@@ -166,7 +166,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useApi } from '~~/composables/useApi'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
@@ -226,11 +225,9 @@ const deleteStream = async (stream: Stream) => {
 
   if (!apiError) {
     await loadStreams()
-    showSuccessToast('Stream deleted successfully')
+    success('Stream deleted successfully')
   } else {
-    showError('Failed to delete stream', {
-      description: apiError
-    })
+    showError('Failed to delete stream', apiError || 'An unexpected error occurred.')
   }
 }
 
@@ -249,14 +246,12 @@ const handleSubmit = async () => {
   })
 
   if (data) {
-    showSuccessToast(`Stream ${editingStream.value ? 'updated' : 'created'} successfully`)
+    success(`Stream ${editingStream.value ? 'updated' : 'created'} successfully`)
     showCreateDialog.value = false
     cancelForm()
     loadStreams()
   } else {
-    showError(`Failed to ${editingStream.value ? 'update' : 'create'} stream`, {
-      description: apiError || 'An unexpected error occurred. Please try again.'
-    })
+    showError(`Failed to ${editingStream.value ? 'update' : 'create'} stream`, apiError || 'An unexpected error occurred. Please try again.')
   }
 
   saving.value = false

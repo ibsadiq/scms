@@ -412,7 +412,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useApi } from '~~/composables/useApi'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 
 definePageMeta({
@@ -437,7 +437,7 @@ interface Department {
 }
 
 const { apiCall } = useApi()
-const { showErrorToast, showSuccessToast } = useErrorHandler()
+const { success, error: showError } = useToast()
 
 const loading = ref(true)
 const subjects = ref<Subject[]>([])
@@ -514,11 +514,11 @@ const confirmDelete = async () => {
 
   if (!error) {
     subjects.value = subjects.value.filter(s => s.id !== subjectToDelete.value?.id)
-    showSuccessToast('Subject deleted successfully')
+    success('Subject deleted successfully')
     showDeleteDialog.value = false
     subjectToDelete.value = null
   } else {
-    showErrorToast(error, 'Failed to delete subject')
+    showError(error, 'Failed to delete subject')
   }
 }
 
@@ -531,7 +531,7 @@ const handleCreateSubmit = async () => {
   })
 
   if (data) {
-    showSuccessToast('Subject created successfully')
+    success('Subject created successfully')
     showCreateDialog.value = false
     // Reset form
     createFormData.value = {
@@ -545,7 +545,7 @@ const handleCreateSubmit = async () => {
     // Reload subjects list
     await loadData()
   } else {
-    showErrorToast(apiError, 'Failed to create subject')
+    showError(apiError, 'Failed to create subject')
   }
 
   creating.value = false

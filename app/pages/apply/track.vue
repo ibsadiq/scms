@@ -113,7 +113,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useBrand } from '~~/composables/useBrand'
 import { useAdmission } from '~~/composables/useAdmission'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
+
+
+const { success: showSuccessToast, error: showErrorToast } = useToast()
 
 definePageMeta({
   layout: false,
@@ -150,16 +153,13 @@ const trackApplication = async () => {
       parent_phone: form.value.parent_phone || undefined,
     })
 
-    // Save tracking token
     localStorage.setItem('admission_tracking_token', result.tracking_token)
-
     showSuccessToast('Application found!')
-
-    // Redirect to application view
     navigateTo(`/apply/view/${result.tracking_token}`)
   } catch (err: any) {
-    console.error('Error tracking application:', err)
-    errorMessage.value = err.data?.detail || err.data?.error || 'Application not found. Please check your details and try again.'
+    const message = err.data?.detail || err.data?.error || 'Application not found. Please check your details and try again.'
+    errorMessage.value = message
+    showErrorToast(message)
   } finally {
     isTracking.value = false
   }

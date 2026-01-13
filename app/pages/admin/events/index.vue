@@ -297,7 +297,7 @@ definePageMeta({
 
 const { fetchEvents, deleteEvent, uploadBulkEvents, createEvent } = useSchoolEvents()
 const { fetchTerms } = useTerms()
-const { showErrorToast, showSuccessToast } = useErrorHandler()
+const { showError, success } = useErrorHandler()
 const config = useRuntimeConfig()
 const route = useRoute()
 
@@ -424,9 +424,9 @@ const handleDelete = async (event: SchoolEvent) => {
   const { error } = await deleteEvent(event.id!)
   if (!error) {
     events.value = events.value.filter(e => e.id !== event.id)
-    showSuccessToast('Event deleted successfully')
+    success('Event deleted successfully')
   } else {
-    showErrorToast(error || 'An unexpected error occurred. Please try again.' , 'Failed to delete event')
+    showError(error || 'An unexpected error occurred. Please try again.' , 'Failed to delete event')
   }
 }
 
@@ -445,12 +445,12 @@ const handleBulkUpload = async () => {
   const { error } = await uploadBulkEvents(selectedFile.value)
 
   if (!error) {
-    showSuccessToast('Events uploaded successfully')
+    success('Events uploaded successfully')
     showBulkUpload.value = false
     selectedFile.value = null
     loadEvents()
   } else {
-    showErrorToast(error || 'An unexpected error occurred. Please try again.' , 'Failed to upload events')
+    showError(error || 'An unexpected error occurred. Please try again.' , 'Failed to upload events')
   }
 
   uploading.value = false
@@ -507,7 +507,7 @@ const handleCreateSubmit = async () => {
 
   if (data) {
     console.log('Event created successfully:', data)
-    showSuccessToast('Event created successfully')
+    success('Event created successfully')
 
     // Reset form
     createFormData.value = {
@@ -524,7 +524,7 @@ const handleCreateSubmit = async () => {
     await loadEvents()
   } else {
     console.error('Failed to create event:', apiError)
-    showErrorToast(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to create event')
+    showError(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to create event')
   }
 
   creating.value = false

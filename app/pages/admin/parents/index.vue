@@ -593,7 +593,7 @@ definePageMeta({
 
 const { fetchParents, deleteParent, uploadBulkParents, createParent } = useParents()
 const { apiCall } = useApi()
-const { showErrorToast, showSuccessToast } = useErrorHandler()
+const { showError, success } = useErrorHandler()
 
 const loading = ref(true)
 const parents = ref<Parent[]>([])
@@ -819,12 +819,12 @@ const handleCreateSubmit = async () => {
   if (data) {
     // Show success message based on invitation status
     if (createFormData.value.send_invitation) {
-      showSuccessToast(
+      success(
         `Invitation sent to ${createFormData.value.first_name} ${createFormData.value.last_name}`,
         'They will receive an email to set up their account.'
       )
     } else {
-      showSuccessToast(`Parent ${createFormData.value.first_name} ${createFormData.value.last_name} registered successfully`)
+      success(`Parent ${createFormData.value.first_name} ${createFormData.value.last_name} registered successfully`)
     }
 
     // Close dialog and reset form
@@ -834,7 +834,7 @@ const handleCreateSubmit = async () => {
     // Reload parents list
     loadData()
   } else {
-    showErrorToast(apiError, 'Failed to register parent/guardian')
+    showError(apiError, 'Failed to register parent/guardian')
   }
 
   creating.value = false

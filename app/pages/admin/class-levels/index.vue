@@ -34,7 +34,6 @@
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Grade Level</TableHead>
                 <TableHead class="text-right">Actions</TableHead>
@@ -42,7 +41,6 @@
             </TableHeader>
             <TableBody>
               <TableRow v-for="classLevel in classLevels" :key="classLevel.id">
-                <TableCell>{{ classLevel.id }}</TableCell>
                 <TableCell class="font-medium">{{ classLevel.name }}</TableCell>
                 <TableCell>{{ getGradeLevelName(classLevel.grade_level) }}</TableCell>
                 <TableCell class="text-right">
@@ -73,15 +71,21 @@
         </DialogHeader>
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div class="space-y-2">
-            <Label for="id">Class Level ID *</Label>
-            <Input
-              id="id"
-              v-model.number="formData.id"
-              type="number"
-              placeholder="e.g., 1"
+            <Label for="grade_level">Grade Level *</Label>
+            <select
+              id="grade_level"
+              v-model="formData.grade_level"
+              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm dark:bg-neutral-800 dark:border-neutral-700"
               required
-              :disabled="!!editingClassLevel"
-            />
+            >
+              <option :value="null" disabled>Select grade level</option>
+              <option v-for="grade in gradeLevels" :key="grade.id" :value="grade.id">
+                {{ grade.name }}
+              </option>
+            </select>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">
+              Select the grade level this class belongs to
+            </p>
           </div>
 
           <div class="space-y-2">
@@ -89,23 +93,12 @@
             <Input
               id="name"
               v-model="formData.name"
-              placeholder="e.g., Form 1A"
+              placeholder="e.g., Form 1A, JSS 1, SSS 2"
               required
             />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="grade_level">Grade Level</Label>
-            <select
-              id="grade_level"
-              v-model="formData.grade_level"
-              class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
-              <option :value="null">None</option>
-              <option v-for="grade in gradeLevels" :key="grade.id" :value="grade.id">
-                {{ grade.name }}
-              </option>
-            </select>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">
+              Enter the specific class name (e.g., JSS 1, Form 1A, Grade 7)
+            </p>
           </div>
 
           <DialogFooter>
@@ -126,7 +119,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import {
   Table,
   TableBody,
@@ -153,7 +145,7 @@ definePageMeta({
 })
 
 interface ClassLevel {
-  id: number
+  id?: number
   name: string
   grade_level: number | null
 }
@@ -175,7 +167,6 @@ const showCreateDialog = ref(false)
 const editingClassLevel = ref<ClassLevel | null>(null)
 
 const formData = ref<ClassLevel>({
-  id: 0,
   name: '',
   grade_level: null
 })
@@ -210,26 +201,22 @@ const handleSubmit = async () => {
     if (data) {
       const index = classLevels.value.findIndex(c => c.id === editingClassLevel.value!.id)
       if (index !== -1) classLevels.value[index] = data
-      showSuccessToast('Class level updated successfully')
+      success('Class level updated successfully')
       closeDialog()
     } else {
-      showError('Failed to update class level', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to update class level', apiError || 'An unexpected error occurred. Please try again.')
     }
   } else {
     const { data, error: apiError } = await apiCall<ClassLevel>(
       '/academic/class-levels/',
-      { method: 'POST', body: formData.value }
+      { method: 'POST', body: { name: formData.value.name, grade_level: formData.value.grade_level } }
     )
     if (data) {
       classLevels.value.push(data)
-      showSuccessToast('Class level created successfully')
+      success('Class level created successfully')
       closeDialog()
     } else {
-      showError('Failed to create class level', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to create class level', apiError || 'An unexpected error occurred. Please try again.')
     }
   }
 
@@ -251,18 +238,16 @@ const handleDelete = async (classLevel: ClassLevel) => {
 
   if (!apiError) {
     classLevels.value = classLevels.value.filter(c => c.id !== classLevel.id)
-    showSuccessToast('Class level deleted successfully')
+    success('Class level deleted successfully')
   } else {
-    showError('Failed to delete class level', {
-      description: apiError
-    })
+    showError('Failed to delete class level', apiError || 'An unexpected error occurred.')
   }
 }
 
 const closeDialog = () => {
   showCreateDialog.value = false
   editingClassLevel.value = null
-  formData.value = { id: 0, name: '', grade_level: null }
+  formData.value = { name: '', grade_level: null }
 }
 
 onMounted(() => {

@@ -249,19 +249,19 @@ const handleSubmit = async () => {
     if (data) {
       const index = academicYears.value.findIndex(y => y.id === editingYear.value!.id)
       if (index !== -1) academicYears.value[index] = data
-      showSuccessToast('Academic year updated successfully')
+      success('Academic year updated successfully')
       closeDialog()
     } else {
-      showErrorToast(apiError, 'Failed to update academic year')
+      showError(apiError, 'Failed to update academic year')
     }
   } else {
     const { data, error: apiError } = await createAcademicYear(payload)
     if (data) {
       academicYears.value.push(data)
-      showSuccessToast('Academic year created successfully')
+      success('Academic year created successfully')
       closeDialog()
     } else {
-      showErrorToast(apiError, 'Failed to create academic year')
+      showError(apiError, 'Failed to create academic year')
     }
   }
 
@@ -274,7 +274,7 @@ const handleDelete = async (year: AcademicYear) => {
   const { error: apiError } = await deleteAcademicYear(year.id!)
   if (!apiError) {
     academicYears.value = academicYears.value.filter(y => y.id !== year.id)
-    showSuccessToast('Academic year deleted successfully')
+    success('Academic year deleted successfully')
   } else {
     showError('Failed to delete academic year', {
       description: apiError

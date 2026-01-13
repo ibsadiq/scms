@@ -119,7 +119,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import {
   Dialog,
   DialogContent,
@@ -185,12 +184,10 @@ const handleSubmit = async () => {
     if (data) {
       const index = departments.value.findIndex(d => d.id === editingDept.value!.id)
       if (index !== -1) departments.value[index] = data
-      showSuccessToast('Department updated successfully')
+      success('Department updated successfully')
       closeDialog()
     } else {
-      showError('Failed to update department', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to update department', apiError || 'An unexpected error occurred. Please try again.')
     }
   } else {
     const { data, error: apiError } = await apiCall<Department>(
@@ -199,12 +196,10 @@ const handleSubmit = async () => {
     )
     if (data) {
       departments.value.push(data)
-      showSuccessToast('Department created successfully')
+      success('Department created successfully')
       closeDialog()
     } else {
-      showError('Failed to create department', {
-        description: apiError || 'An unexpected error occurred. Please try again.'
-      })
+      showError('Failed to create department', apiError || 'An unexpected error occurred. Please try again.')
     }
   }
 
@@ -226,11 +221,9 @@ const handleDelete = async (dept: Department) => {
 
   if (!apiError) {
     departments.value = departments.value.filter(d => d.id !== dept.id)
-    showSuccessToast('Department deleted successfully')
+    success('Department deleted successfully')
   } else {
-    showError('Failed to delete department', {
-      description: apiError
-    })
+    showError('Failed to delete department', apiError || 'An unexpected error occurred.')
   }
 }
 

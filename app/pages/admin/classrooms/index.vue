@@ -306,7 +306,7 @@ interface Stream {
 
 const { apiCall } = useApi()
 const { createClassroom } = useClassrooms()
-const { showErrorToast, showSuccessToast } = useErrorHandler()
+const { showError, success } = useErrorHandler()
 
 const loading = ref(true)
 const classrooms = ref<Classroom[]>([])
@@ -375,12 +375,12 @@ const handleBulkUpload = async () => {
   })
 
   if (!error) {
-    showSuccessToast('Classrooms uploaded successfully')
+    success('Classrooms uploaded successfully')
     showBulkUpload.value = false
     selectedFile.value = null
     loadClassrooms()
   } else {
-    showErrorToast(error || 'An unexpected error occurred. Please try again.' , 'Failed to upload classrooms')
+    showError(error || 'An unexpected error occurred. Please try again.' , 'Failed to upload classrooms')
   }
 
   uploading.value = false
@@ -425,12 +425,12 @@ const resetCreateForm = () => {
 // Handle create form submission
 const handleCreateSubmit = async () => {
   if (!createFormData.value.name) {
-    showErrorToast('Please select a class level' , 'Validation error')
+    showError('Please select a class level' , 'Validation error')
     return
   }
 
   if (!createFormData.value.class_teacher) {
-    showErrorToast('Please select a class teacher' , 'Validation error')
+    showError('Please select a class teacher' , 'Validation error')
     return
   }
 
@@ -450,12 +450,12 @@ const handleCreateSubmit = async () => {
   const { data, error: apiError } = await createClassroom(payload)
 
   if (data) {
-    showSuccessToast('Classroom created successfully')
+    success('Classroom created successfully')
     showCreateDialog.value = false
     resetCreateForm()
     loadClassrooms()
   } else {
-    showErrorToast(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to create classroom')
+    showError(apiError || 'An unexpected error occurred. Please try again.' , 'Failed to create classroom')
   }
 
   creating.value = false

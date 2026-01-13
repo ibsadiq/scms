@@ -245,7 +245,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
 import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionSession } from '~~/types/admission'
 import type { AcademicYear } from '~~/types'
 import { useToast } from '~~/composables/useToast'
@@ -337,10 +336,10 @@ const saveSession = async () => {
     }
     if (editingSession.value) {
       await adminAPI.updateSession(editingSession.value.id, sessionForm.value)
-      showSuccessToast('Session updated successfully')
+      success('Session updated successfully')
     } else {
       await adminAPI.createSession(sessionForm.value)
-      showSuccessToast('Session created successfully')
+      success('Session created successfully')
     }
     closeDialog()
     await loadSessions()
@@ -357,7 +356,7 @@ const activateSession = async (id: number) => {
 
   try {
     await adminAPI.activateSession(id)
-    showSuccessToast('Session activated successfully')
+    success('Session activated successfully')
     await loadSessions()
   } catch (error: any) {
     console.error('Error activating session:', error)

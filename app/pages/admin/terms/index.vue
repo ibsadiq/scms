@@ -187,7 +187,7 @@ import type { Term, AcademicYear } from '~~/types'
 import { useTerms } from '~~/composables/admin/useTerms'
 import { useAcademicYears } from '~~/composables/admin/useAcademicYears'
 import { formatDate } from '~~/utils/helpers'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
+import { useToast } from '~~/composables/useToast'
 
 definePageMeta({
   layout: 'admin',
@@ -196,7 +196,7 @@ definePageMeta({
 
 const { fetchTerms, createTerm, updateTerm, deleteTerm } = useTerms()
 const { fetchAcademicYears } = useAcademicYears()
-const { showErrorToast, showSuccessToast } = useErrorHandler()
+const { success, error: showError } = useToast()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -254,7 +254,7 @@ const handleSubmit = async () => {
 
       if (termStart < yearStart || termEnd > yearEnd) {
         const errorMessage = `Term dates must be within the academic year period (${formatDate(selectedYear.start_date)} - ${formatDate(selectedYear.end_date)})`
-        showErrorToast({ data: { detail: errorMessage } }, 'Invalid dates')
+        showError({ data: { detail: errorMessage } }, 'Invalid dates')
         saving.value = false
         return
       }
@@ -262,14 +262,14 @@ const handleSubmit = async () => {
       // If no end date, just validate start date
       if (termStart < yearStart) {
         const errorMessage = `Term start date must be after academic year start (${formatDate(selectedYear.start_date)})`
-        showErrorToast({ data: { detail: errorMessage } }, 'Invalid dates')
+        showError({ data: { detail: errorMessage } }, 'Invalid dates')
         saving.value = false
         return
       }
     }
 
     if (termStart >= termEnd) {
-      showErrorToast({ data: { detail: 'Start date must be before end date' } }, 'Invalid dates')
+      showError({ data: { detail: 'Start date must be before end date' } }, 'Invalid dates')
       saving.value = false
       return
     }
@@ -287,19 +287,19 @@ const handleSubmit = async () => {
     if (data) {
       const index = terms.value.findIndex(t => t.id === editingTerm.value!.id)
       if (index !== -1) terms.value[index] = data
-      showSuccessToast('Term updated successfully')
+      success('Term updated successfully')
       closeDialog()
     } else {
-      showErrorToast(apiError, 'Failed to update term')
+      showError(apiError, 'Failed to update term')
     }
   } else {
     const { data, error: apiError } = await createTerm(payload as Term)
     if (data) {
       terms.value.push(data)
-      showSuccessToast('Term created successfully')
+      success('Term created successfully')
       closeDialog()
     } else {
-      showErrorToast(apiError, 'Failed to create term')
+      showError(apiError, 'Failed to create term')
     }
   }
 
@@ -312,9 +312,9 @@ const handleDelete = async (term: Term) => {
   const { error: apiError } = await deleteTerm(term.id!)
   if (!apiError) {
     terms.value = terms.value.filter(t => t.id !== term.id)
-    showSuccessToast('Term deleted successfully')
+    success('Term deleted successfully')
   } else {
-    showErrorToast(apiError, 'Failed to delete term')
+    showError(apiError, 'Failed to delete term')
   }
 }
 

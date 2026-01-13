@@ -324,7 +324,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionFeeStructure, AdmissionSession } from '~~/types/admission'
 import { useToast } from '~~/composables/useToast'
 
@@ -408,10 +407,10 @@ const saveFeeStructure = async () => {
   try {
     if (editingFee.value) {
       await adminAPI.updateFeeStructure(editingFee.value.id, feeForm.value)
-      showSuccessToast('Fee structure updated successfully')
+      success('Fee structure updated successfully')
     } else {
       await adminAPI.createFeeStructure(feeForm.value)
-      showSuccessToast('Fee structure created successfully')
+      success('Fee structure created successfully')
     }
     closeDialog()
     await loadFeeStructures()

@@ -43,18 +43,19 @@
             class="flex h-10 w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm"
           >
             <option value="">All Statuses</option>
-            <option value="DRAFT">Draft</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="UNDER_REVIEW">Under Review</option>
-            <option value="DOCUMENTS_PENDING">Documents Pending</option>
-            <option value="EXAM_SCHEDULED">Exam Scheduled</option>
-            <option value="EXAM_COMPLETED">Exam Completed</option>
-            <option value="INTERVIEW_SCHEDULED">Interview Scheduled</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="ACCEPTED">Accepted</option>
-            <option value="ENROLLED">Enrolled</option>
-            <option value="WITHDRAWN">Withdrawn</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_review">Under Review</option>
+            <option value="documents_pending">Documents Pending</option>
+            <option value="exam_scheduled">Exam Scheduled</option>
+            <option value="exam_completed">Exam Completed</option>
+            <option value="interview_scheduled">Interview Scheduled</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="accepted">Accepted</option>
+            <option value="enrolled">Enrolled</option>
+            <option value="withdrawn">Withdrawn</option>
+
           </select>
         </div>
 
@@ -261,7 +262,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAdmissionAdmin } from '~~/composables/useAdmissionAdmin'
-import { useErrorHandler } from '~~/composables/useErrorHandler'
 import type { AdmissionApplication, AdmissionSession, ApplicationStatus } from '~~/types/admission'
 import { useToast } from '~~/composables/useToast'
 
@@ -380,7 +380,7 @@ const exportApplications = async () => {
     window.URL.revokeObjectURL(url)
     document.body.removeChild(a)
 
-    showSuccessToast('Applications exported successfully')
+    success('Applications exported successfully')
   } catch (error) {
     console.error('Error exporting applications:', error)
     showError('Failed to export applications')
